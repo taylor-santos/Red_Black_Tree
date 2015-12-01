@@ -12,14 +12,24 @@ struct node
 	int val;
 	node* left;
 	node* right;
+	node* parent;
 
 	node* addLeaf(int input);
+
+	node* uncle();
+	node* grandparent();
+
+	void rotateLeft();
+	void rotateRight();
+
+	void rebalance();
 
 	node(int value)
 	{
 		val = value;
 		left = NULL;
 		right = NULL;
+		parent = NULL;
 		color = true; //Starts red
 	}
 };
@@ -48,35 +58,162 @@ int main()
 			cout << "Invalid input.  Try again: ";
 		}
 		
-		int digits = 0;
-		int inputCopy = input;
-		if (inputCopy <= 0)
+			int digits = 0;
+			int inputCopy = input;
+			if (inputCopy <= 0)
+			{
+				inputCopy *= -1;
+				digits++;
+			}
+			while (inputCopy) {
+				inputCopy /= 10;
+				digits++;
+			}
+			if (digits > indentWidth)
+				indentWidth = digits;
+			if (root == NULL)
+			{
+				root = new node(input);
+				root->rebalance();
+			}
+			else {
+				node* newNode = root->addLeaf(input);
+				newNode->rebalance();
+				while (root->parent != NULL)
+				{
+					root = root->parent;
+				}
+			}
+			root->color = false;
+			printf("\n");
+			drawTree(root, 0, root);
+			printf("\n");
+
+			/*for (int i = 0; i < 255; ++i)
+			{
+				SetConsoleTextAttribute(hConsole, i);
+				std::cout << i << std::endl;
+			}*/
+	}
+}
+
+node* node::uncle()
+{
+	if (this->parent != NULL)
+	{
+		if (grandparent() == NULL)
 		{
-			inputCopy *= -1;
-			digits++;
+			return NULL;
 		}
-		while (inputCopy) {
-			inputCopy /= 10;
-			digits++;
-		}
-		if (digits > indentWidth)
-			indentWidth = digits;
-		if (root == NULL)
+		if (this->parent == grandparent()->left)
+			return grandparent()->right;
+		return grandparent()->left;
+	}
+	return NULL;
+}
+
+node* node::grandparent()
+{
+	if (this->parent != NULL)
+	{
+		return this->parent->parent;
+	}
+	return NULL;
+}
+
+void node::rotateLeft()
+{
+	if (parent != NULL)
+		if (this == parent->left)
+			return;
+	node* P = parent;
+	node* temp = left;
+	if (P != NULL)
+	{
+		if (P->parent != NULL)
 		{
-			root = new node(input);
+			if (P == P->parent->right)
+				P->parent->right = this;
+			else
+				P->parent->left = this;
 		}
-		else {
-			root->addLeaf(input);
-		}
-		printf("\n");
-		/*
-		for (int i = 0; i < 255; ++i)
+	}
+	if (P != NULL)
+		P->right = temp;
+	if (temp != NULL)
+		temp->parent = P;
+	if (P != NULL)
+		parent = P->parent;
+	if (P != NULL)
+		P->parent = this;
+	left = P;
+}
+
+void node::rotateRight()
+{
+	if (this == parent->right)
+		return;
+	node* P = parent;
+	node* temp = right;
+	if (P->parent != NULL)
+	{
+		if (P == P->parent->left)
+			P->parent->left = this;
+		else
+			P->parent->right = this;
+	}
+	if (P != NULL)
+		P->left = temp;
+	if (temp!=NULL)
+		temp->parent = P;
+	parent = P->parent;
+	if (P!=NULL)
+		P->parent = this;
+	right = P;
+}
+
+void node::rebalance()
+{
+	node* n = this;
+	if (n->parent == NULL)
+		n->color = false;
+	else {
+		if (n->parent->color == true)
 		{
-			SetConsoleTextAttribute(hConsole, i);
-			std::cout << i << std::endl;
+			node* u = n->uncle();
+			node* g;
+			if (u != NULL && u->color == true)
+			{
+				n->parent->color = false;
+				u->color = false;
+				g = n->grandparent();
+				g->color = true;
+				g->rebalance();
+			}
+			else {
+				g = n->grandparent();
+				if (n == n->parent->right && n->parent == g->left)
+				{
+					n->parent->rotateLeft();
+					n = n->left;
+				}
+				else if (n == n->parent->left && n->parent == g->right)
+				{
+					n->parent->rotateRight();
+					n = n->right;
+				}
+				g = n->grandparent();
+				n->parent->color = false;
+				g->color = true;
+				if (n == n->parent->left)
+				{
+					g->rotateRight();
+				}
+				else {
+					g->rotateLeft();
+				}
+			}
 		}
-		*/
-		drawTree(root, 0, root);
 	}
 }
 
@@ -114,12 +251,16 @@ void drawTree(node* currNode, int indent, node* root)
 			nodeWalker = nodeWalker->right;
 	}
 
-	//if (currNode->color)
-	//	SetConsoleTextAttribute(hConsole, 192);
-	//else
-	//	SetConsoleTextAttribute(hConsole, 15);
-	std::cout << "[" << currNode->val << "]";
-	//SetConsoleTextAttribute(hConsole, 240);
+	
+	if (currNode->color)
+		SetConsoleTextAttribute(hConsole, 79);
+	else
+		SetConsoleTextAttribute(hConsole, 15);
+	std::cout << "[";
+	std::cout << currNode->val;
+	std::cout << "]";
+	SetConsoleTextAttribute(hConsole, 240);
+
 
 	int digits = 0;
 	int inputCopy = currNode->val;
@@ -173,6 +314,7 @@ node* node::addLeaf(int input)
 		if (right == NULL)
 		{
 			right = new node(input);
+			right->parent = this;
 			return right;
 		}
 		return right->addLeaf(input);
@@ -182,6 +324,7 @@ node* node::addLeaf(int input)
 		if (left == NULL)
 		{
 			left = new node(input);
+			left->parent = this;
 			return left;
 		}
 		return left->addLeaf(input);
