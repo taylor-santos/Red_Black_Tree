@@ -14,13 +14,11 @@ struct node
 	node* right;
 	node* parent;
 
-	node* addLeaf(int input);
+	node* insert(int input);
+	void del();
 
 	node* uncle();
 	node* grandparent();
-
-	void rotateLeft();
-	void rotateRight();
 
 	void rebalance();
 
@@ -57,7 +55,9 @@ int main()
 			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			cout << "Invalid input.  Try again: ";
 		}
-		
+		//for (int i = 0; i < 5000; ++i)
+		//{
+		//	input = rand() % 10000;
 			int digits = 0;
 			int inputCopy = input;
 			if (inputCopy <= 0)
@@ -77,18 +77,21 @@ int main()
 				root->rebalance();
 			}
 			else {
-				node* newNode = root->addLeaf(input);
-				newNode->rebalance();
-				while (root->parent != NULL)
+				node* newNode = root->insert(input);
+				if (newNode != NULL)
 				{
-					root = root->parent;
+					newNode->rebalance();
+					while (root->parent != NULL)
+					{
+						root = root->parent;
+					}
 				}
 			}
-			root->color = false;
+		//}
 			printf("\n");
 			drawTree(root, 0, root);
 			printf("\n");
-
+		//	while (1);
 			/*for (int i = 0; i < 255; ++i)
 			{
 				SetConsoleTextAttribute(hConsole, i);
@@ -114,6 +117,8 @@ node* node::uncle()
 
 node* node::grandparent()
 {
+	if (this == NULL)
+		return NULL;
 	if (this->parent != NULL)
 	{
 		return this->parent->parent;
@@ -121,7 +126,7 @@ node* node::grandparent()
 	return NULL;
 }
 
-void node::rotateLeft()
+/*void node::rotateLeft()
 {
 	if (parent != NULL)
 		if (this == parent->left)
@@ -147,9 +152,9 @@ void node::rotateLeft()
 	if (P != NULL)
 		P->parent = this;
 	left = P;
-}
+}*/
 
-void node::rotateRight()
+/*void node::rotateRight()
 {
 	if (this == parent->right)
 		return;
@@ -170,48 +175,100 @@ void node::rotateRight()
 	if (P!=NULL)
 		P->parent = this;
 	right = P;
-}
+}*/
 
 void node::rebalance()
 {
+	if (this == NULL)
+		return;
 	node* n = this;
 	if (n->parent == NULL)
+	{
 		n->color = false;
-	else {
-		if (n->parent->color == true)
+		return;
+	}
+	if (n->parent->color == false)
+	{
+		n->color = true;
+		return;
+	}
+	node* u = n->uncle();
+	if ((u != NULL && u->color == false) || u == NULL)
+	{
+		node* p = n->parent;
+		node* g = n->grandparent();
+		node* A;
+		node* B;
+		node* C;
+		if (p == g->left)
 		{
-			node* u = n->uncle();
-			node* g;
-			if (u != NULL && u->color == true)
+			C = g;
+			if (n == p->left)
 			{
-				n->parent->color = false;
-				u->color = false;
-				g = n->grandparent();
-				g->color = true;
-				g->rebalance();
+				A = n;
+				B = p;
 			}
 			else {
-				g = n->grandparent();
-				if (n == n->parent->right && n->parent == g->left)
-				{
-					n->parent->rotateLeft();
-					n = n->left;
-				}
-				else if (n == n->parent->left && n->parent == g->right)
-				{
-					n->parent->rotateRight();
-					n = n->right;
-				}
-				g = n->grandparent();
-				n->parent->color = false;
-				g->color = true;
-				if (n == n->parent->left)
-				{
-					g->rotateRight();
-				}
-				else {
-					g->rotateLeft();
-				}
+				A = p;
+				B = n;
+			}
+		}
+		else {
+			A = g;
+			if (n == p->left)
+			{
+				B = n;
+				C = p;
+			}
+			else {
+				C = n;
+				B = p;
+			}
+		}
+		B->parent = g->parent;
+		if (g->parent != NULL && g == g->parent->left)
+			g->parent->left = B;
+		else if (g->parent != NULL)
+			g->parent->right = B;
+		if (B->left != A)
+		{
+			if (B->left != NULL)
+			{
+				A->right = B->left;
+				A->right->parent = A;
+			}
+			else {
+				A->right = NULL;
+			}
+		}
+		B->left = A;
+		A->parent = B;
+		if (B->right != C)
+		{
+			if (B->right != NULL)
+			{
+				C->left = B->right;
+				C->left->parent = C;
+			}
+			else {
+				C->left = NULL;
+			}
+			B->right = C;
+			C->parent = B;
+		}
+		B->color = false;
+		A->color = true;
+		C->color = true;
+	} else {
+		if (u != NULL)
+			u->color = false;
+		n->parent->color = false;
+		if (n->grandparent() != NULL && n->grandparent()->parent != NULL)
+		{
+			n->grandparent()->color = true;
+			if (n->grandparent()->parent != NULL && n->grandparent()->parent->color == true)
+			{
+				n->grandparent()->rebalance();
 			}
 		}
 	}
@@ -303,11 +360,12 @@ void drawTree(node* currNode, int indent, node* root)
 	}
 }
 
-node* node::addLeaf(int input)
+node* node::insert(int input)
 {
 	if (val == input)
 	{
-		return this;
+		del();
+		return NULL;
 	}
 	if (val < input)
 	{
@@ -317,7 +375,7 @@ node* node::addLeaf(int input)
 			right->parent = this;
 			return right;
 		}
-		return right->addLeaf(input);
+		return right->insert(input);
 	}
 	if (val > input)
 	{
@@ -327,8 +385,34 @@ node* node::addLeaf(int input)
 			left->parent = this;
 			return left;
 		}
-		return left->addLeaf(input);
+		return left->insert(input);
 	}
 	return NULL;
+}
+
+void node::del()
+{
+	std::cout << "Deleting Node: " << val << std::endl;
+	if (parent == NULL)
+	{
+		delete(this);
+		return;
+	}
+	bool leftChild = false;
+	if (this == parent->left)
+		leftChild = true;
+	if (left == NULL && right == NULL)
+	{
+		if (leftChild)
+		{
+			parent->left = NULL;
+		}
+		else {
+			parent->right = NULL;
+		}
+		delete(this);
+		return;
+	}
+	delete(this);
 }
 
