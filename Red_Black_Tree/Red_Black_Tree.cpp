@@ -9,12 +9,12 @@
 struct node
 {
 	bool color;	//True = red, False = black
-	int val;
+	long long int val;
 	node* left;
 	node* right;
 	node* parent;
 
-	node* insert(int input);
+	node* insert(long long int input);
 	void del();
 
 	node* uncle();
@@ -22,7 +22,7 @@ struct node
 
 	void rebalance();
 
-	node(int value)
+	node(long long int value)
 	{
 		val = value;
 		left = NULL;
@@ -34,12 +34,31 @@ struct node
 
 void drawTree(node* currNode, int indent, node* root);
 
+long long int rand64();
+
 int indentWidth = 0;
 HANDLE hConsole;
 
 int main()
 {
 	srand(time(NULL));
+	long long int max = 0;
+	long long int randInt = 0;
+	long long int count = 0;
+	long long int min = LLONG_MAX;
+	do
+	{
+		randInt = rand64();
+		if (abs(randInt) < abs(min))
+		{
+			printf("%lld\n						Count:%lld\n", abs(randInt), count);
+			min = randInt;
+		}
+		count++;
+	}while (randInt < -1000000000 || randInt > 1000000000);
+	printf("%lld\n%lld\n", randInt, count);
+	while (1);
+	
 	system("Color F0");
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, 240);
@@ -47,19 +66,19 @@ int main()
 	while (1)
 	{
 		using namespace std;
-		int input = 0;
+		long long int input = 0;
 		
-		cout << "Input value: ";
+		/*cout << "Input value: ";
 		while (!(cin >> input)) {
 			cin.clear();
 			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			cout << "Invalid input.  Try again: ";
-		}
-		//for (int i = 0; i < 5000; ++i)
-		//{
-		//	input = rand() % 10000;
+		}*/
+		for (int i = 0; i < 1000; ++i)
+		{
+			input = (long long int)(rand() - RAND_MAX/2) * (long long int)(rand() - RAND_MAX / 2) * (long long int)(rand() - RAND_MAX / 2) * (long long int)(rand() - RAND_MAX / 2) * 10;
 			int digits = 0;
-			int inputCopy = input;
+			long long int inputCopy = input;
 			if (inputCopy <= 0)
 			{
 				inputCopy *= -1;
@@ -87,17 +106,28 @@ int main()
 					}
 				}
 			}
-		//}
+		}
 			printf("\n");
 			drawTree(root, 0, root);
 			printf("\n");
-		//	while (1);
+			while (1);
 			/*for (int i = 0; i < 255; ++i)
 			{
 				SetConsoleTextAttribute(hConsole, i);
 				std::cout << i << std::endl;
 			}*/
 	}
+}
+
+long long int rand64()
+{
+	int64_t rand64;
+	int16_t* rand16 = (int16_t*)&rand64;
+	*rand16 = rand() | rand() % 2 << 15;
+	*(rand16 + 1) = rand() | rand() % 2 << 15;
+	*(rand16 + 2) = rand() | rand() % 2 << 15;
+	*(rand16 + 3) = rand() | rand() % 2 << 15;
+	return rand64;
 }
 
 node* node::uncle()
@@ -125,57 +155,6 @@ node* node::grandparent()
 	}
 	return NULL;
 }
-
-/*void node::rotateLeft()
-{
-	if (parent != NULL)
-		if (this == parent->left)
-			return;
-	node* P = parent;
-	node* temp = left;
-	if (P != NULL)
-	{
-		if (P->parent != NULL)
-		{
-			if (P == P->parent->right)
-				P->parent->right = this;
-			else
-				P->parent->left = this;
-		}
-	}
-	if (P != NULL)
-		P->right = temp;
-	if (temp != NULL)
-		temp->parent = P;
-	if (P != NULL)
-		parent = P->parent;
-	if (P != NULL)
-		P->parent = this;
-	left = P;
-}*/
-
-/*void node::rotateRight()
-{
-	if (this == parent->right)
-		return;
-	node* P = parent;
-	node* temp = right;
-	if (P->parent != NULL)
-	{
-		if (P == P->parent->left)
-			P->parent->left = this;
-		else
-			P->parent->right = this;
-	}
-	if (P != NULL)
-		P->left = temp;
-	if (temp!=NULL)
-		temp->parent = P;
-	parent = P->parent;
-	if (P!=NULL)
-		P->parent = this;
-	right = P;
-}*/
 
 void node::rebalance()
 {
@@ -320,7 +299,7 @@ void drawTree(node* currNode, int indent, node* root)
 
 
 	int digits = 0;
-	int inputCopy = currNode->val;
+	long long int inputCopy = currNode->val;
 	if (inputCopy <= 0)
 	{
 		inputCopy *= -1;
@@ -360,12 +339,11 @@ void drawTree(node* currNode, int indent, node* root)
 	}
 }
 
-node* node::insert(int input)
+node* node::insert(long long int input)
 {
 	if (val == input)
 	{
-		del();
-		return NULL;
+		return this;
 	}
 	if (val < input)
 	{
