@@ -5,24 +5,32 @@
 #include <iostream>
 #include <Windows.h>
 #include <ctime>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <algorithm>
 
 struct node
 {
 	bool color;	//True = red, False = black
-	long long int val;
+	std::string val;
 	node* left;
 	node* right;
 	node* parent;
 
-	node* insert(long long int input);
+	node* insert(std::string val);
 	void del();
 
 	node* uncle();
 	node* grandparent();
+	node* successor();
+
+	void leftRotate();
+	void rightRotate();
 
 	void rebalance();
 
-	node(long long int value)
+	node(std::string  value)
 	{
 		val = value;
 		left = NULL;
@@ -32,91 +40,116 @@ struct node
 	}
 };
 
-void drawTree(node* currNode, int indent, node* root);
+void drawTree(node* currNode, node* root);
+
+void deleteFixUp(node* n, node* p, bool nodeIsLeft);
+
+int childCount(node* currNode);
 
 long long int rand64();
 
-int indentWidth = 0;
 HANDLE hConsole;
+
+node* root;
 
 int main()
 {
-	srand(time(NULL));
-	long long int max = 0;
-	long long int randInt = 0;
-	long long int count = 0;
-	long long int min = LLONG_MAX;
-	do
-	{
-		randInt = rand64();
-		if (abs(randInt) < abs(min))
-		{
-			printf("%lld\n						Count:%lld\n", abs(randInt), count);
-			min = randInt;
-		}
-		count++;
-	}while (randInt < -1000000000 || randInt > 1000000000);
-	printf("%lld\n%lld\n", randInt, count);
-	while (1);
-	
+	srand(time(NULL));	
 	system("Color F0");
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, 240);
-	node* root = NULL;
+	_COORD coord;
+	coord.X = 200;
+	coord.Y = 32766;
+	SetConsoleScreenBufferSize(hConsole, coord);
+	root = NULL;
 	while (1)
 	{
+		clock_t begin_time = clock();
 		using namespace std;
-		long long int input = 0;
-		
-		/*cout << "Input value: ";
-		while (!(cin >> input)) {
-			cin.clear();
-			//cin.ignore(numeric_limits<streamsize>::max(), '\n');
-			cout << "Invalid input.  Try again: ";
-		}*/
-		for (int i = 0; i < 1000; ++i)
+		/*
+		cout << "Input file name: ";
+
+		string fileName = "";
+		while (!std::getline(cin, fileName) || fileName[0] == 0)
 		{
-			input = (long long int)(rand() - RAND_MAX/2) * (long long int)(rand() - RAND_MAX / 2) * (long long int)(rand() - RAND_MAX / 2) * (long long int)(rand() - RAND_MAX / 2) * 10;
-			int digits = 0;
-			long long int inputCopy = input;
-			if (inputCopy <= 0)
-			{
-				inputCopy *= -1;
-				digits++;
-			}
-			while (inputCopy) {
-				inputCopy /= 10;
-				digits++;
-			}
-			if (digits > indentWidth)
-				indentWidth = digits;
+			cout << "Invalid filename. Try again: ";
+		}
+		
+		ifstream file(fileName);
+		*/
+		ifstream file("C:\\wordsEn.txt");
+		if (!file.is_open()) {
+			cout << "File not opened!" << endl;
+			while (1);
+		}
+		//int lineCount = std::count(std::istreambuf_iterator<char>(file),std::istreambuf_iterator<char>(), '\n') + 1;
+		std::string input;
+		std::vector<string> words;
+		int nodeCount = 0;
+		//while (getline(file, input)/*file.seekg(rand()%lineCount)*//* && nodeCount < 32766*/)
+		while (std::getline(file, input))
+		{
+			words.push_back(input);
+			/*
+			//file >> input;
 			if (root == NULL)
 			{
 				root = new node(input);
-				root->rebalance();
+				root->color = false;
 			}
 			else {
 				node* newNode = root->insert(input);
-				if (newNode != NULL)
-				{
-					newNode->rebalance();
-					while (root->parent != NULL)
-					{
-						root = root->parent;
-					}
-				}
 			}
+			nodeCount++;
+			//drawTree(root, root);
+			//cout << endl << endl;
+			*/
 		}
-			printf("\n");
-			drawTree(root, 0, root);
-			printf("\n");
-			while (1);
-			/*for (int i = 0; i < 255; ++i)
+
+		for (unsigned int i = 0; i < words.size(); ++i)
+		{
+			input = words.at(i);
+			if (root == NULL)
 			{
-				SetConsoleTextAttribute(hConsole, i);
-				std::cout << i << std::endl;
-			}*/
+				root = new node(input);
+				root->color = false;
+			}
+			else {
+				node* newNode = root->insert(input);
+			}
+			nodeCount++;
+		}
+
+		//cout << childCount(root);
+		drawTree(root, root);
+		//cout << float(clock() - begin_time)/1000;
+		while (1);
+
+		//string input = "";
+		/*
+		
+		cout << "Input value: ";
+
+		while (!std::getline(cin, input) || input[0] == 0)
+		{
+			cout << "Invalid input. Try again: ";
+		}
+
+		*/
 	}
+}
+
+int childCount(node* currNode)
+{
+	if (currNode == NULL)
+		return 0;
+	int count = 1;
+	if (currNode->left != NULL)
+		count += childCount(currNode->left);
+	if (currNode->right != NULL)
+		count += childCount(currNode->right);
+	return count;
 }
 
 long long int rand64()
@@ -128,6 +161,58 @@ long long int rand64()
 	*(rand16 + 2) = rand() | rand() % 2 << 15;
 	*(rand16 + 3) = rand() | rand() % 2 << 15;
 	return rand64;
+}
+
+void node::leftRotate()
+{
+	node* x = this;
+	node* y = x->right;
+	x->right = y->left;
+	if (y->left)
+	{
+		y->left->parent = x;
+	}
+	y->parent = x->parent;
+	if (!x->parent)
+	{
+		root = y;
+	}
+	else if (x == x->parent->left)
+	{
+		x->parent->left = y;
+	}
+	else
+	{
+		x->parent->right = y;
+	}
+	y->left = x;
+	x->parent = y;
+}
+
+void node::rightRotate()
+{
+	node* x = this;
+	node* y = x->left;
+	x->left = y->right;
+	if (y->right)
+	{
+		y->right->parent = x;
+	}
+	y->parent = x->parent;
+	if (!x->parent)
+	{
+		root = y;
+	}
+	else if (x == x->parent->right)
+	{
+		x->parent->right = y;
+	}
+	else
+	{
+		x->parent->left = y;
+	}
+	y->right = x;
+	x->parent = y;
 }
 
 node* node::uncle()
@@ -156,8 +241,87 @@ node* node::grandparent()
 	return NULL;
 }
 
+node* node::successor()
+{
+	if (right != NULL)
+	{
+		node* walker = this->right;
+		while (walker->left != NULL)
+		{
+			walker = walker->left;
+		}
+		return walker;
+	}
+	node* n = this;
+	node* p = n->parent;
+	while (p != NULL && n == p->right)
+	{
+		n = p;
+		p = p->parent;
+	}
+	return p;
+}
+
 void node::rebalance()
 {
+	node* n = this;
+	if (n == NULL)
+		return;
+	node* p = n->parent;
+	if (p == NULL)
+	{
+		n->color = false;
+		return;
+	}
+	node* g = n->grandparent();
+	if (g != NULL)
+	{
+		if (p->color == true)
+		{
+			node* u = n->uncle();
+			if (u != NULL && u->color == true)
+			{
+				u->color = false;
+				p->color = false;
+				g->color = true;
+				g->rebalance();
+			}
+			else if (u == NULL || u->color == false)
+			{
+				//Left-Left Case
+				if (n == p->left && p == g->left)
+				{
+					g->rightRotate();
+					p->color = g->color;
+					g->color = true;
+				}
+				//Left-Right Case
+				else if (n == p->right && p == g->left)
+				{
+					p->leftRotate();
+					g->rightRotate();
+					n->color = g->color;
+					g->color = true;
+				}
+				//Right-Right Case
+				else if (n == p->right && p == g->right)
+				{
+					g->leftRotate();
+					p->color = g->color;
+					g->color = true;
+				}
+				//Right-Left Case
+				else if (n == p->left && p == g->right)
+				{
+					p->rightRotate();
+					g->leftRotate();
+					n->color = g->color;
+					g->color = true;
+				}
+			}
+		}
+	}
+	/*
 	if (this == NULL)
 		return;
 	node* n = this;
@@ -179,7 +343,7 @@ void node::rebalance()
 		node* A;
 		node* B;
 		node* C;
-		if (p == g->left)
+		if (g != NULL && p == g->left)
 		{
 			C = g;
 			if (n == p->left)
@@ -251,116 +415,103 @@ void node::rebalance()
 			}
 		}
 	}
+	*/
 }
 
-void drawTree(node* currNode, int indent, node* root)
+void drawTree(node* currNode, node* root)
 {
+	if (currNode == NULL)
+		return;
 	if (currNode->right != NULL)
-	{
-		drawTree(currNode->right, indent + 1, root);
-	}
-
+		drawTree(currNode->right, root);
 	node* nodeWalker = root;
-
+	if (currNode->parent == NULL)
+		std::cout << (char)205;
+	else
+		std::cout << " ";
+	int blackCount = 0;
 	while (nodeWalker != currNode)
 	{
-		for (int i = 0; i < indentWidth+2; ++i)
+		if (nodeWalker->color == false)
+			blackCount++;
+		int compare = strcmp(&currNode->val[0], &nodeWalker->val[0]);
+		if (compare > 0) //Desired node is larger than walker
 		{
-			std::cout << " ";
+			int compareNext = strcmp(&nodeWalker->right->val[0], &currNode->val[0]);
+			if (compareNext > 0)
+				std::cout << (char)186 << " ";
+			else if (compareNext != 0)
+				std::cout << "  ";
+			nodeWalker = nodeWalker->right;
 		}
-
-		if (nodeWalker->left == currNode)
-			std::cout << (char)200;	//	?192	?200
-		else if (nodeWalker->right == currNode)
-			std::cout << (char)201;	//	?218	?201
-		else if ((nodeWalker->val > currNode->val && nodeWalker->left->val < currNode->val) ||
-			(nodeWalker->val < currNode->val && nodeWalker->right->val > currNode->val))
+		else if (compare < 0) //Desired node is smaller than walker
 		{
-			std::cout << (char)186;	//	?179	?186
+			int compareNext = strcmp(&nodeWalker->left->val[0], &currNode->val[0]);
+			if (compareNext < 0)
+				std::cout << (char)186 << " ";
+			else if (compareNext != 0)
+				std::cout << "  ";
+			nodeWalker = nodeWalker->left;
 		}
 		else
-			std::cout << " ";
-
-		if (nodeWalker->val > currNode->val)
-			nodeWalker = nodeWalker->left;
-		else if (nodeWalker->val < currNode->val)
-			nodeWalker = nodeWalker->right;
+			break;
 	}
-
-	
+	if (currNode->parent != NULL)
+	{
+		if (currNode == currNode->parent->left)
+			std::cout << (char)200 << (char)205;
+		else
+			std::cout << (char)201 << (char)205;
+	}
 	if (currNode->color)
 		SetConsoleTextAttribute(hConsole, 79);
 	else
 		SetConsoleTextAttribute(hConsole, 15);
-	std::cout << "[";
-	std::cout << currNode->val;
-	std::cout << "]";
+	std::cout << "[" << currNode->val << "]";
 	SetConsoleTextAttribute(hConsole, 240);
 
-
-	int digits = 0;
-	long long int inputCopy = currNode->val;
-	if (inputCopy <= 0)
+	if (currNode->left == NULL && currNode->right == NULL)
 	{
-		inputCopy *= -1;
-		digits++;
+		if (currNode->color == false)
+			blackCount++;
+		std::cout << "			" << blackCount;
 	}
-	while (inputCopy) {
-		inputCopy /= 10;
-		digits++;
-	}
-	if (currNode->right != NULL || currNode->left != NULL)
-	{
-		for (int i = digits; i < indentWidth; ++i)
-		{
-			std::cout << (char)205;	//	?196	?205
-		}
-	}
-	
-
-	if (currNode->right != NULL && currNode->left != NULL)
-	{
-		std::cout << (char)185;	//	?180	?185
-	}
-	else if (currNode->right != NULL)
-	{
-		std::cout << (char)188;	//	?217	?188
-	}
-	else if (currNode->left != NULL)
-	{
-		std::cout << (char)187;	//	?191	?187
-	}
-
 	std::cout << std::endl;
 
 	if (currNode->left != NULL)
 	{
-		drawTree(currNode->left, indent + 1, root);
+		drawTree(currNode->left, root);
 	}
 }
 
-node* node::insert(long long int input)
+node* node::insert(std::string input)
 {
-	if (val == input)
+	int compare = strcmp(&val[0], &input[0]);
+	if (compare == 0)
 	{
+		//del();
 		return this;
 	}
-	if (val < input)
+	if (compare < 0)
 	{
 		if (right == NULL)
 		{
 			right = new node(input);
+			right->color = true;
 			right->parent = this;
+			right->rebalance();
 			return right;
 		}
 		return right->insert(input);
 	}
-	if (val > input)
+	if (compare > 0)
 	{
 		if (left == NULL)
 		{
 			left = new node(input);
+			left->color = true;
 			left->parent = this;
+			left->rebalance();
 			return left;
 		}
 		return left->insert(input);
@@ -370,27 +521,54 @@ node* node::insert(long long int input)
 
 void node::del()
 {
-	std::cout << "Deleting Node: " << val << std::endl;
-	if (parent == NULL)
+	node* y;
+	if (left == NULL || right == NULL)
 	{
-		delete(this);
-		return;
+		y = this;
 	}
-	bool leftChild = false;
-	if (this == parent->left)
-		leftChild = true;
-	if (left == NULL && right == NULL)
+	else {
+		y = successor();
+	}
+	node* x;
+	if (y->left != NULL)
 	{
-		if (leftChild)
-		{
-			parent->left = NULL;
-		}
-		else {
-			parent->right = NULL;
-		}
-		delete(this);
-		return;
+		x = y->left;
 	}
-	delete(this);
+	else {
+		x = y->right;
+	}
+	if (x != NULL)
+	{
+		x->parent = y->parent;
+	}
+	node* xParent = y->parent;
+
+	bool yIsLeft = false;
+	if (y->parent == NULL)
+	{
+		root = x;
+		root->color = false;
+		//std::cout << std::endl << "Root is " << x->val << std::endl;
+	}
+	else if (y == y->parent->left)
+	{
+		y->parent->left = x;
+		yIsLeft = true;
+	}
+	else {
+		y->parent->right = x;
+		yIsLeft = false;
+	}
+	if (y != this)
+		this->val = y->val;
+	if (y->color == true && x != NULL)
+	{
+		deleteFixUp(x, xParent, yIsLeft);
+	}
+}
+
+void deleteFixUp(node* n, node* p, bool nodeIsLeft)
+{
+	std::cout << std::endl << "Fixup " << n->val << std::endl;
 }
 
