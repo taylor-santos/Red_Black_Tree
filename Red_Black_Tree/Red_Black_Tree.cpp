@@ -19,7 +19,7 @@ struct node
 	node* parent;
 
 	node* insert(std::string val);
-	void del();
+	node* del();
 
 	node* uncle();
 	node* grandparent();
@@ -78,6 +78,7 @@ int main()
 		
 		ifstream file(fileName);
 		*/
+		/*
 		ifstream file("C:\\wordsEn.txt");
 		if (!file.is_open()) {
 			cout << "File not opened!" << endl;
@@ -87,28 +88,18 @@ int main()
 		std::string input;
 		std::vector<string> words;
 		int nodeCount = 0;
-		//while (getline(file, input)/*file.seekg(rand()%lineCount)*//* && nodeCount < 32766*/)
+		
 		while (std::getline(file, input))
 		{
 			words.push_back(input);
-			/*
-			//file >> input;
-			if (root == NULL)
-			{
-				root = new node(input);
-				root->color = false;
-			}
-			else {
-				node* newNode = root->insert(input);
-			}
-			nodeCount++;
-			//drawTree(root, root);
-			//cout << endl << endl;
-			*/
 		}
+		
 
-		for (unsigned int i = 0; i < words.size(); ++i)
+		random_shuffle(words.begin(), words.end());
+
+		for (unsigned int i = 0; i < words.size() && i < 32766; ++i)
 		{
+			
 			input = words.at(i);
 			if (root == NULL)
 			{
@@ -119,12 +110,27 @@ int main()
 				node* newNode = root->insert(input);
 			}
 			nodeCount++;
+			
 		}
+		*/
 
+		string input;
+		while (!std::getline(cin, input) || input[0] == 0)
+		{
+			cout << "Invalid filename. Try again: ";
+		}
+		if (root == NULL)
+		{
+			root = new node(input);
+			root->color = false;
+		}
+		else {
+			node* newNode = root->insert(input);
+		}
 		//cout << childCount(root);
 		drawTree(root, root);
 		//cout << float(clock() - begin_time)/1000;
-		while (1);
+		//while (1);
 
 		//string input = "";
 		/*
@@ -489,8 +495,8 @@ node* node::insert(std::string input)
 	int compare = strcmp(&val[0], &input[0]);
 	if (compare == 0)
 	{
-		//del();
-		return this;
+		del();
+		return NULL;
 	}
 	if (compare < 0)
 	{
@@ -519,56 +525,97 @@ node* node::insert(std::string input)
 	return NULL;
 }
 
-void node::del()
+node* node::del()
 {
-	node* y;
-	if (left == NULL || right == NULL)
+	if (this == NULL)
 	{
-		y = this;
+		return NULL;
 	}
-	else {
-		y = successor();
-	}
-	node* x;
-	if (y->left != NULL)
+	node* v = this;
+	if (v->left == NULL && v->right == NULL && v->parent != NULL)
 	{
-		x = y->left;
+		if (v == v->parent->left)
+		{
+			v->parent->left = NULL;
+		}
+		else {
+			v->parent->right = NULL;
+		}
+		return NULL;
 	}
-	else {
-		x = y->right;
-	}
-	if (x != NULL)
+	else if (v->left == NULL && v->right == NULL && v->parent == NULL)
 	{
-		x->parent = y->parent;
+		root = NULL;
+		return NULL;
 	}
-	node* xParent = y->parent;
+	else if (v->left != NULL && v->right == NULL)
+	{
+		node* u = v->left;
+		if (v->parent != NULL)
+		{
+			if (v == v->parent->left)
+			{
+				v->parent->left = u;
+				u->parent = v->parent;
+			}
+			else {
+				v->parent->right = u;
+				u->parent = v->parent;
+			}
+		}
+		else {
+			u->parent = NULL;
+			root = u;
+		}
+		if (v->color == true || u->color == true)
+			u->color = false;
+		return u;
+	}
+	else if (v->right != NULL && v->left == NULL)
+	{
+		node* u = v->right;
+		if (v->parent != NULL)
+		{
+			if (v == v->parent->left)
+			{
+				v->parent->left = u;
+				u->parent = v->parent;
+			}
+			else {
+				v->parent->right = u;
+				u->parent = v->parent;
+			}
+		}
+		else {
+			u->parent = NULL;
+			root = u;
+		}
+		if (v->color == true || u->color == true)
+			u->color = false;
+		return u;
+	}
+	else if (v->right != NULL && v->left != NULL)
+	{
+		node* u = v->successor();
+		v->val = u->val;
+		u = u->del();
+		if (u != NULL)
+		{
+			if (v->color == true || u->color == true)
+				u->color = false;
+			else if (v->color == false && u->color == false)
+			{
+				bool uDoubleBlack = true;
+				while (uDoubleBlack || u->parent != NULL)
+				{
 
-	bool yIsLeft = false;
-	if (y->parent == NULL)
-	{
-		root = x;
-		root->color = false;
-		//std::cout << std::endl << "Root is " << x->val << std::endl;
+				}
+			}
+			return u;
+		}
+		else {
+			return NULL;
+		}
 	}
-	else if (y == y->parent->left)
-	{
-		y->parent->left = x;
-		yIsLeft = true;
-	}
-	else {
-		y->parent->right = x;
-		yIsLeft = false;
-	}
-	if (y != this)
-		this->val = y->val;
-	if (y->color == true && x != NULL)
-	{
-		deleteFixUp(x, xParent, yIsLeft);
-	}
-}
-
-void deleteFixUp(node* n, node* p, bool nodeIsLeft)
-{
-	std::cout << std::endl << "Fixup " << n->val << std::endl;
 }
 

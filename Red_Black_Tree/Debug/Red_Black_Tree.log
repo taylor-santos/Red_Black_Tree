@@ -1,3 +1,4 @@
 ﻿  Red_Black_Tree.cpp
 c:\users\taylor\documents\github\red_black_tree\red_black_tree\red_black_tree.cpp(57): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+c:\users\taylor\documents\github\red_black_tree\red_black_tree\red_black_tree.cpp(603): warning C4715: 'node::del': not all control paths return a value
   Red_Black_Tree.vcxproj -> C:\Users\Taylor\Documents\GitHub\Red_Black_Tree\Debug\Red_Black_Tree.exe
