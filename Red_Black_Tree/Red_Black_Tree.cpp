@@ -24,6 +24,7 @@ struct node
 	node* uncle();
 	node* grandparent();
 	node* successor();
+	node* sibling();
 
 	void leftRotate();
 	void rightRotate();
@@ -47,6 +48,10 @@ void deleteFixUp(node* n, node* p, bool nodeIsLeft);
 int childCount(node* currNode);
 
 long long int rand64();
+
+bool checkTree(node* n);
+
+int nodeHeight(node* n);
 
 HANDLE hConsole;
 
@@ -119,6 +124,7 @@ int main()
 		{
 			cout << "Invalid filename. Try again: ";
 		}
+		//input = to_string(rand());
 		if (root == NULL)
 		{
 			root = new node(input);
@@ -129,6 +135,9 @@ int main()
 		}
 		//cout << childCount(root);
 		drawTree(root, root);
+
+		if (checkTree(root) == false)
+			printf("BROKEN TREE!\n");
 		//cout << float(clock() - begin_time)/1000;
 		//while (1);
 
@@ -144,6 +153,50 @@ int main()
 
 		*/
 	}
+}
+
+bool checkTree(node* n)
+{
+	if (n == NULL)
+		return true;
+	if (n->color == true)
+	{
+		if (n->parent == false)
+		{
+			return false;
+		}
+		if (n->left != NULL && n->left->color == true)
+		{
+			return false;
+		}
+		if (n->right != NULL && n->right->color == true)
+		{
+			return false;
+		}
+		if ((n->right != NULL && n->left == NULL) || (n->right == NULL && n->left != NULL))
+		{
+			return false;
+		}
+	}
+	if (nodeHeight == 0)
+		return false;
+	if (checkTree(n->left) && checkTree(n->right))
+		return true;
+}
+
+int nodeHeight(node* n)
+{
+	if (n == NULL)
+		return 1;
+	int leftH = nodeHeight(n->left);
+	if (leftH == 0)
+		return 0;
+	int rightH = nodeHeight(n->right);
+	if (rightH == 0)
+		return 0;
+	if (leftH != rightH)
+		return 0;
+	return leftH + n->color ? 0 : 1;
 }
 
 int childCount(node* currNode)
@@ -266,6 +319,16 @@ node* node::successor()
 		p = p->parent;
 	}
 	return p;
+}
+
+node* node::sibling()
+{
+	if (parent == NULL)
+		return NULL;
+	if (this == parent->left)
+		return parent->right;
+	else
+		return parent->left;
 }
 
 void node::rebalance()
@@ -476,11 +539,11 @@ void drawTree(node* currNode, node* root)
 	std::cout << "[" << currNode->val << "]";
 	SetConsoleTextAttribute(hConsole, 240);
 
-	if (currNode->left == NULL && currNode->right == NULL)
+	if (currNode->left == NULL || currNode->right == NULL)
 	{
 		if (currNode->color == false)
 			blackCount++;
-		std::cout << "			" << blackCount;
+		//std::cout << "				" << blackCount;
 	}
 	std::cout << std::endl;
 
@@ -527,95 +590,135 @@ node* node::insert(std::string input)
 
 node* node::del()
 {
-	if (this == NULL)
-	{
-		return NULL;
-	}
-	node* v = this;
-	if (v->left == NULL && v->right == NULL && v->parent != NULL)
-	{
-		if (v == v->parent->left)
-		{
-			v->parent->left = NULL;
-		}
-		else {
-			v->parent->right = NULL;
-		}
-		return NULL;
-	}
-	else if (v->left == NULL && v->right == NULL && v->parent == NULL)
-	{
-		root = NULL;
-		return NULL;
-	}
-	else if (v->left != NULL && v->right == NULL)
-	{
-		node* u = v->left;
-		if (v->parent != NULL)
-		{
-			if (v == v->parent->left)
-			{
-				v->parent->left = u;
-				u->parent = v->parent;
-			}
-			else {
-				v->parent->right = u;
-				u->parent = v->parent;
-			}
-		}
-		else {
-			u->parent = NULL;
-			root = u;
-		}
-		if (v->color == true || u->color == true)
-			u->color = false;
-		return u;
-	}
-	else if (v->right != NULL && v->left == NULL)
-	{
-		node* u = v->right;
-		if (v->parent != NULL)
-		{
-			if (v == v->parent->left)
-			{
-				v->parent->left = u;
-				u->parent = v->parent;
-			}
-			else {
-				v->parent->right = u;
-				u->parent = v->parent;
-			}
-		}
-		else {
-			u->parent = NULL;
-			root = u;
-		}
-		if (v->color == true || u->color == true)
-			u->color = false;
-		return u;
-	}
-	else if (v->right != NULL && v->left != NULL)
-	{
-		node* u = v->successor();
-		v->val = u->val;
-		u = u->del();
-		if (u != NULL)
-		{
-			if (v->color == true || u->color == true)
-				u->color = false;
-			else if (v->color == false && u->color == false)
-			{
-				bool uDoubleBlack = true;
-				while (uDoubleBlack || u->parent != NULL)
-				{
+	node* n = this;
+	if (n == NULL)
+		return n;
 
+	node* m = NULL;
+	if (n->left != NULL)
+	{
+		m = n->left;
+		while (m->right != NULL)
+			m = m->right;
+	}
+	else if (n->right != NULL)
+	{
+		m = n->right;
+		while (m->left != NULL)
+			m = m->left;
+	}
+
+	//https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Removal
+
+	n->val = m->val;
+	
+	node* c = NULL;
+	if (m->left != NULL)
+	{
+		c = m->left;
+	}
+	else if (m->right != NULL)
+	{
+		c = m->right;
+	}
+	if (m->color == true)
+	{
+		//m must have a parent, because it's red.
+		if (m == m->parent->left)
+		{
+			m->parent->left = c;
+		}
+		else {
+			m->parent->right = c;
+		}
+		if (c != NULL)
+		{
+			c->parent = m->parent;
+		}
+	}
+	else
+	{
+		if (c != NULL && c->color == true)
+		{
+			if (m == m->parent->left)
+			{
+				m->parent->left = c;
+			}
+			else {
+				m->parent->right = c;
+			}
+			c->parent = m->parent;
+			c->color = false;
+		}
+		else if (c == NULL || (c != NULL && c->color == false))
+		{
+
+		}
+	}
+	/*
+	if (this == NULL)
+		return NULL;
+	node* n = this;
+	node* v = NULL;
+	if (n->right != NULL)	//Find successor descendant 
+	{
+		v = n->right;
+		while (v->left != NULL)
+			v = v->left;
+	}
+	if (v != NULL)
+	{
+		//v is the leftmost descendant of the right child, so v has no left child
+		n->val = v->val;
+		if (v->parent != n)
+			v->parent->left = v->right;
+		else
+			v->parent->right = v->right;
+		if (v->right != NULL)
+		{
+			v->right->parent = v->parent;
+		}
+		if (v->color == true)	//If v is red, the black depth has not been broken, and no further action needs to be taken
+			return NULL;
+		else
+		{
+			//If v is black, black depth has been broken and needs rebalancing
+			node* r = v->right;
+			if (r != NULL && r->color == true)	//If the child of v is red, changing it to black fixes the black depth
+			{
+				r->color = false;
+				return NULL;
+			}
+			else if (r == NULL || (r != NULL && r->color == false))
+			{
+				bool rIsDoubleBlack = true;
+				node* y = NULL;
+				node* x = r->parent;
+				if (r != NULL && r == x->left)
+					y = x->right;
+				else if (r != NULL)
+					y = x->left;
+				if (y != NULL && y->color == false)
+				{
+					
 				}
 			}
-			return u;
-		}
-		else {
-			return NULL;
 		}
 	}
+	else {//N's successor is one if its ancestors, or it is the root
+		if (n->parent == NULL)
+		{
+			root = n->left;
+			return NULL;
+		}
+		else {
+			if (n == n->parent->left)
+				n->parent->left = n->left;
+			else
+				n->parent->right = n->left;
+		}
+	}
+	return NULL;
+	*/
 }
 
