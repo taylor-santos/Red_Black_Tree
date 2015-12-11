@@ -19,7 +19,7 @@ struct node
 	node* parent;
 
 	node* insert(std::string val);
-	node* del();
+	
 
 	node* uncle();
 	node* grandparent();
@@ -28,8 +28,8 @@ struct node
 
 	void leftRotate();
 	void rightRotate();
-
 	void rebalance();
+	void del();
 
 	node(std::string  value)
 	{
@@ -118,23 +118,34 @@ int main()
 			
 		}
 		*/
-
+		/*
 		string input;
 		while (!std::getline(cin, input) || input[0] == 0)
 		{
 			cout << "Invalid filename. Try again: ";
 		}
 		//input = to_string(rand());
-		if (root == NULL)
+		*/
+		while (checkTree(root))
 		{
-			root = new node(input);
-			root->color = false;
+			string input = " ";
+			input[0] = (char)((int)(rand() % 26 + 65));
+			if (root == NULL)
+			{
+				root = new node(input);
+				root->color = false;
+			}
+			else {
+				node* newNode = root->insert(input);
+			}
+			cout << input << endl;
+			drawTree(root, root);
 		}
-		else {
-			node* newNode = root->insert(input);
-		}
+		while (1);
 		//cout << childCount(root);
 		drawTree(root, root);
+		
+
 
 		if (checkTree(root) == false)
 			printf("BROKEN TREE!\n");
@@ -182,6 +193,7 @@ bool checkTree(node* n)
 		return false;
 	if (checkTree(n->left) && checkTree(n->right))
 		return true;
+	return false;
 }
 
 int nodeHeight(node* n)
@@ -326,6 +338,8 @@ node* node::successor()
 
 node* node::sibling()
 {
+	if (this == NULL)
+		return NULL;
 	if (parent == NULL)
 		return NULL;
 	if (this == parent->left)
@@ -591,13 +605,10 @@ node* node::insert(std::string input)
 	return NULL;
 }
 
-node* node::del()
+void node::del()
 {
 	node* n = this;
-	if (n == NULL)
-		return n;
-
-	node* m = NULL;
+	node* m = this;
 	if (n->left != NULL)
 	{
 		m = n->left;
@@ -610,141 +621,140 @@ node* node::del()
 		while (m->left != NULL)
 			m = m->left;
 	}
-	else {
-		if (n->parent != NULL)
-		{
-			if (n == n->parent->left)
-				n->parent->left = NULL;
-			else
-				n->parent->right = NULL;
-			return NULL;
-		}
-		else {
-			root = NULL;
-			return NULL;
-		}
-	}
-
+	node* s = m->sibling();
 	n->val = m->val;
-	
 	node* c = NULL;
 	if (m->left != NULL)
-	{
 		c = m->left;
-	}
 	else if (m->right != NULL)
-	{
 		c = m->right;
+
+	node* p = m->parent;
+	if (p == NULL) //p can only be NULL if n has no parent and no children. Thus, it is the only node in the tree
+	{
+		root = NULL;
+		return;
 	}
+	if (m == p->left)
+		p->left = c;
+	else
+		p->right = c;
+	if (c != NULL)
+		c->parent = p;
 	if (m->color == true)
 	{
-		//m must have a parent, because it's red.
-		if (m == m->parent->left)
+		//If m is red, it cannot have children:
+		//Red nodes must have either 2 or 0 children, and m is an in-order predecessor/successor, so it can have a max of one child. 
+		return;
+	}
+	node* sL = NULL;
+	node* sR = NULL;
+	if (s != NULL)
+	{
+		sL = s->left;
+		sR = s->right;
+	}
+	if (m->color == false)
+	{
+		if (c != NULL && c->color == true)
 		{
-			m->parent->left = c;
+			//If m is black and its child is red, setting the child to black will preserve the black height.
+			c->color = false;
+			return;
 		}
 		else {
-			m->parent->right = c;
-		}
-		if (c != NULL)
-		{
-			c->parent = m->parent;
-		}
-	}else{	//m is black
-		if (c != NULL && c->color == true)	//c is red
-		{
-			if (m == m->parent->left)
-			{
-				m->parent->left = c;
-			}
-			else {
-				m->parent->right = c;
-			}
-			c->parent = m->parent;
-			c->color = false;
-		}
-		else if (c == NULL || (c != NULL && c->color == false))	//c is black
-		{
-			if (m == m->parent->left)
-			{
-				m->parent->left = c;
-			}
-			else {
-				m->parent->right = c;
-			}
-			if (c != NULL)
-				c->parent = m->parent;
+			//Complex case if both m and its child are black.
+			//m's sibling s must exist because m's parent must have two children to preserve black height
 			n = c;
-			node* s = n->sibling();	//n must have sibling because n's parent included n and c, which were both black, so n must have a sibling with 2+ black height
-			node* p = n->parent;
-			node* sL = s->left;
-			node* sR = s->right;
-		}
-	}
-	/*
-	if (this == NULL)
-		return NULL;
-	node* n = this;
-	node* v = NULL;
-	if (n->right != NULL)	//Find successor descendant 
-	{
-		v = n->right;
-		while (v->left != NULL)
-			v = v->left;
-	}
-	if (v != NULL)
-	{
-		//v is the leftmost descendant of the right child, so v has no left child
-		n->val = v->val;
-		if (v->parent != n)
-			v->parent->left = v->right;
-		else
-			v->parent->right = v->right;
-		if (v->right != NULL)
-		{
-			v->right->parent = v->parent;
-		}
-		if (v->color == true)	//If v is red, the black depth has not been broken, and no further action needs to be taken
-			return NULL;
-		else
-		{
-			//If v is black, black depth has been broken and needs rebalancing
-			node* r = v->right;
-			if (r != NULL && r->color == true)	//If the child of v is red, changing it to black fixes the black depth
+			//Case 2: s is red
+			if (s->color == true)
 			{
-				r->color = false;
-				return NULL;
+				printf("Case 2\n");
+				p->color = true;
+				s->color = false;
+				if (n == p->left)
+					p->leftRotate();
+				else
+					p->rightRotate();
+				p = s->parent;
 			}
-			else if (r == NULL || (r != NULL && r->color == false))
+			//Case 3: p, s, sL, and sR are black
+			if (p->color == false && s->color == false && (sL == NULL || sL->color == false) && (sR == NULL || sR->color == false))
 			{
-				bool rIsDoubleBlack = true;
-				node* y = NULL;
-				node* x = r->parent;
-				if (r != NULL && r == x->left)
-					y = x->right;
-				else if (r != NULL)
-					y = x->left;
-				if (y != NULL && y->color == false)
+				printf("Case 3\n");
+				s->color = true;
+				p->del();
+			}
+			else {
+				//Case 4: s, sL, and sR are black, p is red
+				if ((n!= NULL && n->color == true) && s->color == false && (sL == NULL || sL->color == false) && (sR == NULL || sR->color == false))
 				{
+					printf("Case 4\n");
+					s->color = true;
+					p->color = false;
+				}
+				else {
+					//s = n->sibling();
+					//sL = s->left;
+					//sR = s->right;
+					if (s == NULL || (s != NULL && s->color == false))
+					{
+						if (n == p->left && (sR == NULL || (sR != NULL && sR->color == false)) && (sL != NULL && sL->color == true))
+						{
+							//Case 5a: s is black, sL is red, sR is black, and n is left of p
+							printf("Case 5a\n");
+							s->color = true;
+							sL->color = false;
+							s->rightRotate();
+						}
+						else if (n == p->right && (sL == NULL || (sL != NULL && sL->color == false)) && (sR != NULL && sR->color == true))
+						{
+							//Case 5b: s is black, sL is black, sR is red, and n is right of p
+							printf("Case 5b\n");
+							s->color = true;
+							sR->color = false;
+							s->leftRotate();
+						}
+					}
+					/*
 					
+					Case 6:
+					black,	no children, 		right child of red, 	black sibling,	no niblings
+					black, 	no children, 		right child of black, 	black sibling,	no niblings
+					black,	no children, 		left child of red,	black sibling,	one red right nibling
+					black,	no children, 		right child of red,	black sibling,	no niblings
+					black,	no children, 		left child of red,	black sibling,	one red left nibling
+					black,	no children,		left child of red,	black sibling,	one red right nibling
+					black,	no children,		right child of red,	black sibling,	two red niblings
+
+					Case 6:
+					black,	one b l one r r child	root,			no sibling,	no niblings
+
+					black,	two black children,	right child of black,	black sibling,	one red left one black right niblings
+
+
+					
+					*/
+					//Case 6:
+					printf("Case 6\n");
+					s = n->sibling();
+					if (s != NULL)
+						s->color = n->parent->color;
+					p->color = false;
+					if (n == p->left)
+					{
+						if (sR != NULL)
+							sR->color = false;
+						p->leftRotate();
+					}
+					else {
+						if (sL != NULL)
+							sL->color = false;
+						p->rightRotate();
+					}
 				}
 			}
 		}
 	}
-	else {//N's successor is one if its ancestors, or it is the root
-		if (n->parent == NULL)
-		{
-			root = n->left;
-			return NULL;
-		}
-		else {
-			if (n == n->parent->left)
-				n->parent->left = n->left;
-			else
-				n->parent->right = n->left;
-		}
-	}
-	return NULL;
-	*/
 }
 
