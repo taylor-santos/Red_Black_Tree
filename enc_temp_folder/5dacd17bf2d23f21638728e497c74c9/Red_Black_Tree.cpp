@@ -675,10 +675,13 @@ node* node::del()
 			if (c != NULL)
 				c->parent = m->parent;
 			n = c;
-			node* s = n->sibling();	//n must have sibling because n's parent included n and c, which were both black, so n must have a sibling with 2+ black height
-			node* p = n->parent;
-			node* sL = s->left;
-			node* sR = s->right;
+			if (n != NULL)
+			{
+				node* s = n->sibling();	//n must have sibling because n's parent included n and c, which were both black, so n must have a sibling with 2+ black height
+				node* p = n->parent;
+				node* sL = s->left;
+				node* sR = s->right;
+			}
 		}
 	}
 	/*
