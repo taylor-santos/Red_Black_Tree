@@ -125,11 +125,16 @@ int main()
 			cout << "Invalid filename. Try again: ";
 		}
 		//input = to_string(rand());
-		*/
+		
 		while (checkTree(root))
 		{
 			string input = " ";
-			input[0] = (char)((int)(rand() % 26 + 65));
+			if (root!=NULL && root->color == false && rand() % 10 == 1)
+			{
+				input = root->val;
+				printf("					REMOVED ROOT\n");
+			}else
+				input[0] = (char)((int)(rand() % 26 + 65));
 			if (root == NULL)
 			{
 				root = new node(input);
@@ -141,8 +146,25 @@ int main()
 			cout << input << endl;
 			drawTree(root, root);
 		}
-		while (1);
+		*/
+
+		//while (1);
 		//cout << childCount(root);
+
+		string input;
+		cout << "Input value: ";
+		while (!std::getline(cin, input) || input[0] == 0)
+		{
+			cout << "Invalid input. Try again: ";
+		}
+		if (root == NULL)
+		{
+			root = new node(input);
+			root->color = false;
+		}
+		else {
+			node* newNode = root->insert(input);
+		}
 		drawTree(root, root);
 		
 
@@ -605,156 +627,147 @@ node* node::insert(std::string input)
 	return NULL;
 }
 
+bool isBlack(node* n)
+{
+	if (n == NULL)
+		return true;
+	if (n->color == false)
+		return true;
+	return false;
+}
+
+bool delete_case2(node* n)
+{
+	if (n == NULL)
+		return false;
+	std::cout << "Deletion Case 2." << std::endl;
+	node* s = n->sibling();
+	if (s != NULL && s->color == true)
+	{
+		n->parent->color = true;
+		s->color = false;
+		if (n == n->parent->left)
+			n->parent->leftRotate();
+		else
+			n->parent->rightRotate();
+	}
+}
+
+bool delete_case1(node* n)
+{
+	if (n == NULL)
+		return false;
+	std::cout << "Deletion Case 1." << std::endl;
+	if (n->parent != NULL)
+	{
+		if (delete_case2(n))
+			return true;
+		else
+			return false;
+	}
+}
+
 void node::del()
 {
-	node* n = this;
-	node* m = this;
-	if (n->left != NULL)
-	{
-		m = n->left;
-		while (m->right != NULL)
-			m = m->right;
-	}
-	else if (n->right != NULL)
-	{
-		m = n->right;
-		while (m->left != NULL)
-			m = m->left;
-	}
-	node* s = m->sibling();
-	n->val = m->val;
-	node* c = NULL;
-	if (m->left != NULL)
-		c = m->left;
-	else if (m->right != NULL)
-		c = m->right;
-
-	node* p = m->parent;
-	if (p == NULL) //p can only be NULL if n has no parent and no children. Thus, it is the only node in the tree
-	{
-		root = NULL;
+	if (this == NULL)
 		return;
-	}
-	if (m == p->left)
-		p->left = c;
-	else
-		p->right = c;
-	if (c != NULL)
-		c->parent = p;
-	if (m->color == true)
+	//std::cout << "Deleting \"" << this->val << "\"." << std::endl;
+	node* nodeToDelete = NULL;
+	if (this->left != NULL)
 	{
-		//If m is red, it cannot have children:
-		//Red nodes must have either 2 or 0 children, and m is an in-order predecessor/successor, so it can have a max of one child. 
-		return;
-	}
-	node* sL = NULL;
-	node* sR = NULL;
-	if (s != NULL)
+		nodeToDelete = this->left;
+		while (nodeToDelete->right != NULL)
+			nodeToDelete = nodeToDelete->right;
+	}else if (this->right != NULL)
 	{
-		sL = s->left;
-		sR = s->right;
+		nodeToDelete = this->right;
+		while (nodeToDelete->left != NULL)
+			nodeToDelete = nodeToDelete->left;
 	}
-	if (m->color == false)
+	if (nodeToDelete != NULL)
 	{
-		if (c != NULL && c->color == true)
+		std::cout << "Replacing \"" << this->val << "\" with ";
+		this->val = nodeToDelete->val;
+		if (nodeToDelete == nodeToDelete->parent->left)
 		{
-			//If m is black and its child is red, setting the child to black will preserve the black height.
-			c->color = false;
-			return;
+			std::cout << "predecessor \"" << nodeToDelete->val << "\"" << std::endl;
+			nodeToDelete->parent->left = nodeToDelete->right;
+			if (nodeToDelete->right != NULL)
+			{
+				std::cout << "\"" << nodeToDelete->val << "\" has a right child, moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
+				nodeToDelete->right->parent = nodeToDelete->parent;
+			}else if (nodeToDelete->left != NULL)
+			{
+				std::cout << "\"" << nodeToDelete->val << "\" has a left child (special case where predecessor is also child), moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
+				nodeToDelete->parent->left = nodeToDelete->left;
+				nodeToDelete->left->parent = nodeToDelete->parent;
+			}
+		}
+		else
+		{
+			std::cout << "successor \"" << nodeToDelete->val << "\"" << std::endl;
+			nodeToDelete->parent->right = nodeToDelete->left;
+			if (nodeToDelete->left != NULL)
+			{
+				std::cout << "\"" << nodeToDelete->val << "\" has a left child, moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
+				nodeToDelete->left->parent = nodeToDelete->parent;
+			}else if (nodeToDelete->right != NULL)
+			{
+				std::cout << "\"" << nodeToDelete->val << "\" has a right child (special case where predecessor is also child), moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
+				nodeToDelete->parent->right = nodeToDelete->right;
+				nodeToDelete->right->parent = nodeToDelete->parent;
+			}
+		}
+		if (nodeToDelete->color == true)
+		{
+			std::cout << "\"" << nodeToDelete->val << "\" is RED, deleting it will not break black-height." << std::endl;
 		}
 		else {
-			//Complex case if both m and its child are black.
-			//m's sibling s must exist because m's parent must have two children to preserve black height
-			n = c;
-			//Case 2: s is red
-			if (s->color == true)
+			node* childOfDeletedNode = NULL;
+			if (nodeToDelete->left != NULL)
+				childOfDeletedNode = nodeToDelete->left;
+			else
+				childOfDeletedNode = nodeToDelete->right;
+			if (childOfDeletedNode != NULL)
 			{
-				printf("Case 2\n");
-				p->color = true;
-				s->color = false;
-				if (n == p->left)
-					p->leftRotate();
-				else
-					p->rightRotate();
-				p = s->parent;
-			}
-			//Case 3: p, s, sL, and sR are black
-			if (p->color == false && s->color == false && (sL == NULL || sL->color == false) && (sR == NULL || sR->color == false))
-			{
-				printf("Case 3\n");
-				s->color = true;
-				p->del();
+				std::cout << "\"" << nodeToDelete->val << "\" has a child, \"" << childOfDeletedNode->val << "\", which is ";
+				
 			}
 			else {
-				//Case 4: s, sL, and sR are black, p is red
-				if ((n!= NULL && n->color == true) && s->color == false && (sL == NULL || sL->color == false) && (sR == NULL || sR->color == false))
+				std::cout << "\"" << nodeToDelete->val << "\" has no children, so its child is considered ";
+			}
+			if (childOfDeletedNode == NULL || childOfDeletedNode != NULL && childOfDeletedNode->color == false)
+			{
+				std::cout << "BLACK." << std::endl;
+				std::cout << "This is the complex case of BLACK followed by BLACK. Deleting \"" << nodeToDelete->val << "\" will result in a black-imbalance." << std::endl;
+				if (delete_case1(childOfDeletedNode))
 				{
-					printf("Case 4\n");
-					s->color = true;
-					p->color = false;
-				}
-				else {
-					//s = n->sibling();
-					//sL = s->left;
-					//sR = s->right;
-					if (s == NULL || (s != NULL && s->color == false))
-					{
-						if (n == p->left && (sR == NULL || (sR != NULL && sR->color == false)) && (sL != NULL && sL->color == true))
-						{
-							//Case 5a: s is black, sL is red, sR is black, and n is left of p
-							printf("Case 5a\n");
-							s->color = true;
-							sL->color = false;
-							s->rightRotate();
-						}
-						else if (n == p->right && (sL == NULL || (sL != NULL && sL->color == false)) && (sR != NULL && sR->color == true))
-						{
-							//Case 5b: s is black, sL is black, sR is red, and n is right of p
-							printf("Case 5b\n");
-							s->color = true;
-							sR->color = false;
-							s->leftRotate();
-						}
-					}
-					/*
-					
-					Case 6:
-					black,	no children, 		right child of red, 	black sibling,	no niblings
-					black, 	no children, 		right child of black, 	black sibling,	no niblings
-					black,	no children, 		left child of red,	black sibling,	one red right nibling
-					black,	no children, 		right child of red,	black sibling,	no niblings
-					black,	no children, 		left child of red,	black sibling,	one red left nibling
-					black,	no children,		left child of red,	black sibling,	one red right nibling
-					black,	no children,		right child of red,	black sibling,	two red niblings
-
-					Case 6:
-					black,	one b l one r r child	root,			no sibling,	no niblings
-
-					black,	two black children,	right child of black,	black sibling,	one red left one black right niblings
-
-
-					
-					*/
-					//Case 6:
-					printf("Case 6\n");
-					s = n->sibling();
-					if (s != NULL)
-						s->color = n->parent->color;
-					p->color = false;
-					if (n == p->left)
-					{
-						if (sR != NULL)
-							sR->color = false;
-						p->leftRotate();
-					}
-					else {
-						if (sL != NULL)
-							sL->color = false;
-						p->rightRotate();
-					}
+					return;
 				}
 			}
+			else {
+				std::cout << "RED." << std::endl;
+				std::cout << "This is a simple case of BLACK followed by RED, which can be fixed by coloring \"" << childOfDeletedNode->val << "\" BLACK." << std::endl;
+				childOfDeletedNode->color = false;
+			}
 		}
+	}
+	else {
+		std::cout << "\"" << this->val << "\" has no successors, removing it completely." << std::endl;
+		if (this->parent == NULL)
+		{
+			std::cout << "\"" << this->val << "\" is the root, so the tree is now empty." << std::endl;
+			root = NULL;
+			return;
+		}
+		if (this->color == false)
+		{
+			std::cout << "\"" << this->val << "\" is BLACK with only leaf nodes as children, deletion will result in black-imbalance." << std::endl;
+		}
+		if (this == this->parent->right)
+			this->parent->right = NULL;
+		else
+			this->parent->left = NULL;
 	}
 }
 
