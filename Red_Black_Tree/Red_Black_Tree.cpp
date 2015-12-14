@@ -12,6 +12,7 @@
 
 struct node
 {
+	bool isLeaf;
 	bool color;	//True = red, False = black
 	std::string val;
 	node* left;
@@ -34,6 +35,10 @@ struct node
 	node(std::string  value)
 	{
 		val = value;
+		if (val == NULL)
+			isLeaf = true;
+		else
+			isLeaf = false;
 		left = NULL;
 		right = NULL;
 		parent = NULL;
