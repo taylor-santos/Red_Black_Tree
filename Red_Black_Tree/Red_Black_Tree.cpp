@@ -12,13 +12,14 @@
 
 struct node
 {
+	bool isLeaf;
 	bool color;	//True = red, False = black
-	std::string val;
+	std::string* val;
 	node* left;
 	node* right;
 	node* parent;
 
-	node* insert(std::string val);
+	void insert(std::string val);
 	
 
 	node* uncle();
@@ -31,19 +32,22 @@ struct node
 	void rebalance();
 	void del();
 
-	node(std::string  value)
+	node(node* p)
 	{
-		val = value;
+		val = new std::string();
+		isLeaf = true;
 		left = NULL;
 		right = NULL;
-		parent = NULL;
-		color = true; //Starts red
+		parent = p;
+		color = false;	//Leaf is black.
+	}
+	~node()
+	{
+		delete val;
 	}
 };
 
 void drawTree(node* currNode, node* root);
-
-void deleteFixUp(node* n, node* p, bool nodeIsLeft);
 
 int childCount(node* currNode);
 
@@ -53,9 +57,16 @@ bool checkTree(node* n);
 
 int nodeHeight(node* n);
 
+void delete_case1(node* n);
+void delete_case2(node* n);
+void delete_case3(node* n);
+void delete_case4(node* n);
+void delete_case5(node* n);
+void delete_case6(node* n);
+
 HANDLE hConsole;
 
-node* root;
+node* root = new node(NULL);
 
 int main()
 {
@@ -67,7 +78,7 @@ int main()
 	coord.X = 200;
 	coord.Y = 32766;
 	SetConsoleScreenBufferSize(hConsole, coord);
-	root = NULL;
+	
 	while (1)
 	{
 		clock_t begin_time = clock();
@@ -151,26 +162,80 @@ int main()
 		//while (1);
 		//cout << childCount(root);
 
+		/*
 		string input;
-		cout << "Input value: ";
+		cout << "Input key (i/d/s) and string: ";
 		while (!std::getline(cin, input) || input[0] == 0)
 		{
 			cout << "Invalid input. Try again: ";
 		}
-		if (root == NULL)
+		if (root->isLeaf == true)
 		{
-			root = new node(input);
+			root = new node(NULL);
+			root->isLeaf = false;
+			root->val = input;
+			root->left = new node(root);
+			root->right = new node(root);
 			root->color = false;
 		}
 		else {
 			node* newNode = root->insert(input);
-		}
+		}			
+
 		drawTree(root, root);
-		
+		cout << endl;
 
-
-		if (checkTree(root) == false)
-			printf("BROKEN TREE!\n");
+		checkTree(root);
+		*/
+		int test = 1;
+		bool increase = true;
+		string input;
+		do
+		{
+			
+			/*
+			cout << "Input string: ";
+			while (!std::getline(cin, input) || input[0] == 0)
+			{
+				cout << "Invalid input. Try again: ";
+			}
+			cout << endl << input << endl;
+			*/
+			input = to_string(test);
+			if (increase)
+				test++;
+			else
+				test--;
+			if (test == 1000)
+			{
+				drawTree(root, root);
+				std::cout << endl;
+				increase = !increase;
+			}
+			if (test == 0)
+			{
+				drawTree(root, root);
+				std::cout << endl;
+				increase = !increase;
+			}
+			if (root->isLeaf == true)
+			{
+				root = new node(NULL);
+				root->isLeaf = false;
+				root->val = new string(input);
+				root->left = new node(root);
+				root->right = new node(root);
+				root->color = false;
+			}
+			else {
+				root->insert(input);
+			}
+			//drawTree(root, root);
+			//cout << endl;
+		} while (checkTree(root));
+		drawTree(root, root);
+		std::cout << endl;
+		while (1);
 		//cout << float(clock() - begin_time)/1000;
 		//while (1);
 
@@ -190,37 +255,90 @@ int main()
 
 bool checkTree(node* n)
 {
+	if (n->isLeaf == true)
+	{
+		if (n->color == true)
+		{
+			//Node is leaf, but colored red. Tree is not correct.
+			printf("BROKEN TREE! Leaf is RED.\n");
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
 	if (n == NULL)
-		return true;
+	{
+		printf("BROKEN TREE! Not all nodes have instantiated children.\n");
+		return false;
+	}
 	if (n->color == true)
 	{
-		if (n->parent == false)
+		if (n->parent == NULL)
 		{
+			//Node is root, but also red. Tree is not correct.
+			printf("BROKEN TREE! Root is RED.\n");
 			return false;
 		}
-		if (n->left != NULL && n->left->color == true)
+		if (n->left->color == true)
 		{
+			//Node is red, but has red left child. Tree is not correct.
+			printf("BROKEN TREE! Node is RED, but has RED left child.\n");
 			return false;
 		}
-		if (n->right != NULL && n->right->color == true)
+		if (n->right->color == true)
 		{
+			//Node is red, but has red right child. Tree is not correct.
+			printf("BROKEN TREE! Node is RED, but has RED right child.\n");
 			return false;
 		}
-		if ((n->right != NULL && n->left == NULL) || (n->right == NULL && n->left != NULL))
+		if ((n->right->isLeaf == false && n->left->isLeaf == true) || (n->right->isLeaf == true && n->left->isLeaf == false))
 		{
+			//Node is red, but has one single leaf child. Tree is not correct.
+			printf("BROKEN TREE! Node is RED, but has one single leaf child.\n");
 			return false;
 		}
 	}
+
+	if (n->left->isLeaf == false)
+	{
+		//if (strcmp(&n->val[0], &n->left->val[0]) <= 0)
+		if (strcmp(&((*n->val)[0]), &((*n->left->val)[0])) <= 0)
+		{
+			//Left node is larger than its parent. Tree is not correct.
+			printf("BROKEN TREE! Node's left child is larger than its parent.\n");
+			return false;
+		}
+	}
+	if (n->right->isLeaf == false)
+	{
+		//if (strcmp(&n->val[0], &n->right->val[0]) >= 0)
+		if (strcmp(&((*n->val)[0]), &((*n->right->val)[0])) >= 0)
+		{
+			//Right node is smaller than its parent. Tree is not correct.
+			printf("BROKEN TREE! Node's right child is smaller than its parent.\n");
+			return false;
+		}
+	}
+
 	if (nodeHeight(n) == 0)
+	{
+		//Tree's black height unbalanced.
+		printf("BROKEN TREE! Tree's black height is unbalanced.\n");
 		return false;
+	}
 	if (checkTree(n->left) && checkTree(n->right))
+	{
+		//Node is correct, and node's two children are also correct.
 		return true;
+	}
+	printf("BROKEN TREE! Unknown error.\n");
 	return false;
 }
 
 int nodeHeight(node* n)
 {
-	if (n == NULL)
+	if (n->isLeaf == true)
 		return 1;
 	int leftH = nodeHeight(n->left);
 	if (leftH == 0)
@@ -238,12 +356,12 @@ int nodeHeight(node* n)
 
 int childCount(node* currNode)
 {
-	if (currNode == NULL)
+	if (currNode->isLeaf == true)
 		return 0;
 	int count = 1;
-	if (currNode->left != NULL)
+	if (currNode->left->isLeaf == false)
 		count += childCount(currNode->left);
-	if (currNode->right != NULL)
+	if (currNode->right->isLeaf == false)
 		count += childCount(currNode->right);
 	return count;
 }
@@ -313,224 +431,92 @@ void node::rightRotate()
 
 node* node::uncle()
 {
-	if (this->parent != NULL)
+	if (this->parent == NULL)
 	{
-		if (grandparent() == NULL)
-		{
-			return NULL;
-		}
-		if (this->parent == grandparent()->left)
-			return grandparent()->right;
-		return grandparent()->left;
+		//this is root.
+		return NULL;
 	}
-	return NULL;
+	return this->parent->sibling();
 }
 
 node* node::grandparent()
 {
-	if (this == NULL)
+	if (this->parent == NULL)
+	{
+		//this is root.
 		return NULL;
-	if (this->parent != NULL)
-	{
-		return this->parent->parent;
 	}
-	return NULL;
-}
-
-node* node::successor()
-{
-	if (right != NULL)
-	{
-		node* walker = this->right;
-		while (walker->left != NULL)
-		{
-			walker = walker->left;
-		}
-		return walker;
-	}
-	node* n = this;
-	node* p = n->parent;
-	while (p != NULL && n == p->right)
-	{
-		n = p;
-		p = p->parent;
-	}
-	return p;
+	return this->parent->parent;
 }
 
 node* node::sibling()
 {
-	if (this == NULL)
+	if (this->parent == NULL)
+	{
+		//this is root.
 		return NULL;
-	if (parent == NULL)
-		return NULL;
-	if (this == parent->left)
-		return parent->right;
+	}
+	if (this == this->parent->left)
+		return this->parent->right;
 	else
-		return parent->left;
+		return this->parent->left;
 }
 
 void node::rebalance()
 {
 	node* n = this;
-	if (n == NULL)
-		return;
 	node* p = n->parent;
+	node* g = n->grandparent();
+	node* u = n->uncle();
 	if (p == NULL)
 	{
+		//n is new root, thus is only node in tree.
 		n->color = false;
 		return;
 	}
-	node* g = n->grandparent();
-	if (g != NULL)
+	if (p->color == false)
 	{
-		if (p->color == true)
-		{
-			node* u = n->uncle();
-			if (u != NULL && u->color == true)
-			{
-				u->color = false;
-				p->color = false;
-				g->color = true;
-				g->rebalance();
-			}
-			else if (u == NULL || u->color == false)
-			{
-				//Left-Left Case
-				if (n == p->left && p == g->left)
-				{
-					g->rightRotate();
-					p->color = g->color;
-					g->color = true;
-				}
-				//Left-Right Case
-				else if (n == p->right && p == g->left)
-				{
-					p->leftRotate();
-					g->rightRotate();
-					n->color = g->color;
-					g->color = true;
-				}
-				//Right-Right Case
-				else if (n == p->right && p == g->right)
-				{
-					g->leftRotate();
-					p->color = g->color;
-					g->color = true;
-				}
-				//Right-Left Case
-				else if (n == p->left && p == g->right)
-				{
-					p->rightRotate();
-					g->leftRotate();
-					n->color = g->color;
-					g->color = true;
-				}
-			}
-		}
-	}
-	/*
-	if (this == NULL)
-		return;
-	node* n = this;
-	if (n->parent == NULL)
-	{
-		n->color = false;
+		//parent is black, n is red. Black height is unaffected.
 		return;
 	}
-	if (n->parent->color == false)
+	if (u != NULL && u->color == true)
 	{
-		n->color = true;
+		//Both parent and uncle are red. Make them black and grandparent red, then balance grandparent.
+		p->color = false;
+		u->color = false;
+		g->color = true;
+		g->rebalance();
 		return;
 	}
-	node* u = n->uncle();
-	if ((u != NULL && u->color == false) || u == NULL)
+	if (n == p->right && p == g->left)
 	{
-		node* p = n->parent;
-		node* g = n->grandparent();
-		node* A;
-		node* B;
-		node* C;
-		if (g != NULL && p == g->left)
-		{
-			C = g;
-			if (n == p->left)
-			{
-				A = n;
-				B = p;
-			}
-			else {
-				A = p;
-				B = n;
-			}
-		}
-		else {
-			A = g;
-			if (n == p->left)
-			{
-				B = n;
-				C = p;
-			}
-			else {
-				C = n;
-				B = p;
-			}
-		}
-		B->parent = g->parent;
-		if (g->parent != NULL && g == g->parent->left)
-			g->parent->left = B;
-		else if (g->parent != NULL)
-			g->parent->right = B;
-		if (B->left != A)
-		{
-			if (B->left != NULL)
-			{
-				A->right = B->left;
-				A->right->parent = A;
-			}
-			else {
-				A->right = NULL;
-			}
-		}
-		B->left = A;
-		A->parent = B;
-		if (B->right != C)
-		{
-			if (B->right != NULL)
-			{
-				C->left = B->right;
-				C->left->parent = C;
-			}
-			else {
-				C->left = NULL;
-			}
-			B->right = C;
-			C->parent = B;
-		}
-		B->color = false;
-		A->color = true;
-		C->color = true;
-	} else {
-		if (u != NULL)
-			u->color = false;
-		n->parent->color = false;
-		if (n->grandparent() != NULL && n->grandparent()->parent != NULL)
-		{
-			n->grandparent()->color = true;
-			if (n->grandparent()->parent != NULL && n->grandparent()->parent->color == true)
-			{
-				n->grandparent()->rebalance();
-			}
-		}
+		//Left-Right case
+		p->leftRotate();
+		n = n->left;
 	}
-	*/
+	else if (n == p->left && p == g->right)
+	{
+		//Right-Left case
+		p->rightRotate();
+		n = n->right;
+	}
+	g = n->grandparent();
+	p = n->parent;
+	p->color = false;
+	g->color = true;
+	if (n == p->left)
+		g->rightRotate();
+	else
+		g->leftRotate();
 }
 
 void drawTree(node* currNode, node* root)
 {
 	if (currNode == NULL)
 		return;
-	if (currNode->right != NULL)
+	if (currNode->isLeaf == true)
+		return;
+	if (currNode->right->isLeaf == false)
 		drawTree(currNode->right, root);
 	node* nodeWalker = root;
 	if (currNode->parent == NULL)
@@ -542,10 +528,12 @@ void drawTree(node* currNode, node* root)
 	{
 		if (nodeWalker->color == false)
 			blackCount++;
-		int compare = strcmp(&currNode->val[0], &nodeWalker->val[0]);
+		//int compare = strcmp(&currNode->val[0], &nodeWalker->val[0]);
+		int compare = strcmp(&((*currNode->val)[0]), &((*nodeWalker->val)[0]));
 		if (compare > 0) //Desired node is larger than walker
 		{
-			int compareNext = strcmp(&nodeWalker->right->val[0], &currNode->val[0]);
+			//int compareNext = strcmp(&nodeWalker->right->val[0], &currNode->val[0]);
+			int compareNext = strcmp(&((*nodeWalker->right->val)[0]), &((*currNode->val)[0]));
 			if (compareNext > 0)
 				std::cout << (char)186 << " ";
 			else if (compareNext != 0)
@@ -554,7 +542,8 @@ void drawTree(node* currNode, node* root)
 		}
 		else if (compare < 0) //Desired node is smaller than walker
 		{
-			int compareNext = strcmp(&nodeWalker->left->val[0], &currNode->val[0]);
+			//int compareNext = strcmp(&nodeWalker->left->val[0], &currNode->val[0]);
+			int compareNext = strcmp(&((*nodeWalker->left->val)[0]), &((*currNode->val)[0]));
 			if (compareNext < 0)
 				std::cout << (char)186 << " ";
 			else if (compareNext != 0)
@@ -575,10 +564,10 @@ void drawTree(node* currNode, node* root)
 		SetConsoleTextAttribute(hConsole, 79);
 	else
 		SetConsoleTextAttribute(hConsole, 15);
-	std::cout << "[" << currNode->val << "]";
+	std::cout << "[" << *currNode->val << "]";
 	SetConsoleTextAttribute(hConsole, 240);
 
-	if (currNode->left == NULL || currNode->right == NULL)
+	if (currNode->left->isLeaf == true || currNode->right->isLeaf == true)
 	{
 		if (currNode->color == false)
 			blackCount++;
@@ -586,188 +575,225 @@ void drawTree(node* currNode, node* root)
 	}
 	std::cout << std::endl;
 
-	if (currNode->left != NULL)
+	if (currNode->left->isLeaf == false)
 	{
 		drawTree(currNode->left, root);
 	}
 }
 
-node* node::insert(std::string input)
+void node::insert(std::string input)
 {
-	int compare = strcmp(&val[0], &input[0]);
+	if (this->isLeaf == true)
+	{
+		this->isLeaf = false;
+		this->val = new std::string(input);
+		if (this->left == NULL)
+			this->left = new node(this);
+		if (this->right == NULL)
+			this->right = new node(this);
+		this->color = true;
+		this->rebalance();
+	}
+	//int compare = strcmp(&val[0], &input[0]);
+	int compare = strcmp(&((*val)[0]), &((input)[0]));
 	if (compare == 0)
 	{
 		del();
-		return NULL;
+		return;
 	}
 	if (compare < 0)
 	{
-		if (right == NULL)
+		if (right->isLeaf == true)
 		{
-			right = new node(input);
+			right->isLeaf = false;
+			right->val = new std::string(input);
+			if (right->left == NULL)
+				right->left = new node(right);
+			if (right->right == NULL)
+				right->right = new node(right);
 			right->color = true;
-			right->parent = this;
 			right->rebalance();
-			return right;
+			return;
 		}
-		return right->insert(input);
+		right->insert(input);
+		return;
 	}
 	if (compare > 0)
 	{
-		if (left == NULL)
+		if (left->isLeaf == true)
 		{
-			left = new node(input);
+			left->isLeaf = false;
+			left->val = new std::string(input);
+			if (left->left == NULL)
+				left->left = new node(left);
+			if (left->right == NULL)
+				left->right = new node(left);
 			left->color = true;
-			left->parent = this;
 			left->rebalance();
-			return left;
+			return;
 		}
-		return left->insert(input);
+		left->insert(input);
+		return;
 	}
-	return NULL;
-}
-
-bool isBlack(node* n)
-{
-	if (n == NULL)
-		return true;
-	if (n->color == false)
-		return true;
-	return false;
-}
-
-bool delete_case2(node* n)
-{
-	if (n == NULL)
-		return false;
-	std::cout << "Deletion Case 2." << std::endl;
-	node* s = n->sibling();
-	if (s != NULL && s->color == true)
-	{
-		n->parent->color = true;
-		s->color = false;
-		if (n == n->parent->left)
-			n->parent->leftRotate();
-		else
-			n->parent->rightRotate();
-	}
-}
-
-bool delete_case1(node* n)
-{
-	if (n == NULL)
-		return false;
-	std::cout << "Deletion Case 1." << std::endl;
-	if (n->parent != NULL)
-	{
-		if (delete_case2(n))
-			return true;
-		else
-			return false;
-	}
+	return;
 }
 
 void node::del()
 {
 	if (this == NULL)
 		return;
-	//std::cout << "Deleting \"" << this->val << "\"." << std::endl;
-	node* nodeToDelete = NULL;
-	if (this->left != NULL)
+	node* n = this;
+	node* m = this;
+	if (n->left->isLeaf == false)
 	{
-		nodeToDelete = this->left;
-		while (nodeToDelete->right != NULL)
-			nodeToDelete = nodeToDelete->right;
-	}else if (this->right != NULL)
-	{
-		nodeToDelete = this->right;
-		while (nodeToDelete->left != NULL)
-			nodeToDelete = nodeToDelete->left;
+		m = n->left;
+		while (m->right->isLeaf == false)
+			m = m->right;
 	}
-	if (nodeToDelete != NULL)
+	else if (n->right->isLeaf == false)
 	{
-		std::cout << "Replacing \"" << this->val << "\" with ";
-		this->val = nodeToDelete->val;
-		if (nodeToDelete == nodeToDelete->parent->left)
+		m = n->right;
+		while (m->left->isLeaf == false)
+			m = m->left;
+	}
+	node* c = m->left;
+	if (m->right->isLeaf == false)
+		c = m->right;
+	delete n->val;
+	n->val = new std::string(*m->val);
+	//Delete m:
+	if (m->parent != NULL)
+	{
+		if (m == m->parent->left)
 		{
-			std::cout << "predecessor \"" << nodeToDelete->val << "\"" << std::endl;
-			nodeToDelete->parent->left = nodeToDelete->right;
-			if (nodeToDelete->right != NULL)
-			{
-				std::cout << "\"" << nodeToDelete->val << "\" has a right child, moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
-				nodeToDelete->right->parent = nodeToDelete->parent;
-			}else if (nodeToDelete->left != NULL)
-			{
-				std::cout << "\"" << nodeToDelete->val << "\" has a left child (special case where predecessor is also child), moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
-				nodeToDelete->parent->left = nodeToDelete->left;
-				nodeToDelete->left->parent = nodeToDelete->parent;
-			}
-		}
-		else
-		{
-			std::cout << "successor \"" << nodeToDelete->val << "\"" << std::endl;
-			nodeToDelete->parent->right = nodeToDelete->left;
-			if (nodeToDelete->left != NULL)
-			{
-				std::cout << "\"" << nodeToDelete->val << "\" has a left child, moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
-				nodeToDelete->left->parent = nodeToDelete->parent;
-			}else if (nodeToDelete->right != NULL)
-			{
-				std::cout << "\"" << nodeToDelete->val << "\" has a right child (special case where predecessor is also child), moving it to child of \"" << nodeToDelete->parent->val << "\"." << std::endl;
-				nodeToDelete->parent->right = nodeToDelete->right;
-				nodeToDelete->right->parent = nodeToDelete->parent;
-			}
-		}
-		if (nodeToDelete->color == true)
-		{
-			std::cout << "\"" << nodeToDelete->val << "\" is RED, deleting it will not break black-height." << std::endl;
+			m->parent->left = c;
 		}
 		else {
-			node* childOfDeletedNode = NULL;
-			if (nodeToDelete->left != NULL)
-				childOfDeletedNode = nodeToDelete->left;
-			else
-				childOfDeletedNode = nodeToDelete->right;
-			if (childOfDeletedNode != NULL)
-			{
-				std::cout << "\"" << nodeToDelete->val << "\" has a child, \"" << childOfDeletedNode->val << "\", which is ";
-				
-			}
-			else {
-				std::cout << "\"" << nodeToDelete->val << "\" has no children, so its child is considered ";
-			}
-			if (childOfDeletedNode == NULL || childOfDeletedNode != NULL && childOfDeletedNode->color == false)
-			{
-				std::cout << "BLACK." << std::endl;
-				std::cout << "This is the complex case of BLACK followed by BLACK. Deleting \"" << nodeToDelete->val << "\" will result in a black-imbalance." << std::endl;
-				if (delete_case1(childOfDeletedNode))
-				{
-					return;
-				}
-			}
-			else {
-				std::cout << "RED." << std::endl;
-				std::cout << "This is a simple case of BLACK followed by RED, which can be fixed by coloring \"" << childOfDeletedNode->val << "\" BLACK." << std::endl;
-				childOfDeletedNode->color = false;
-			}
+			m->parent->right = c;
 		}
+		c->parent = m->parent;
 	}
 	else {
-		std::cout << "\"" << this->val << "\" has no successors, removing it completely." << std::endl;
-		if (this->parent == NULL)
+		c->parent = NULL;
+	}
+	if (m->color == true)
+	{
+		//If  m is red, replacing it with its child (black by definition) will not affect black height.
+		delete m;
+		return;
+	}
+	else {
+		//m is black.
+		if (c->color == true)
 		{
-			std::cout << "\"" << this->val << "\" is the root, so the tree is now empty." << std::endl;
-			root = NULL;
+			//If m is black and its child is red, changing its child to black preserves black height.
+			c->color = false;
+			delete m;
 			return;
 		}
-		if (this->color == false)
-		{
-			std::cout << "\"" << this->val << "\" is BLACK with only leaf nodes as children, deletion will result in black-imbalance." << std::endl;
+		else {
+			//m is black and its child is black, deleting m breaks black height.
+			delete m;
+			delete_case1(c);
 		}
-		if (this == this->parent->right)
-			this->parent->right = NULL;
-		else
-			this->parent->left = NULL;
+	}
+}
+
+void delete_case1(node* n)
+{
+	if (n->parent == NULL)
+	{
+		//The child becomes the new root.
+		root = n;
+		return;
+	}
+	delete_case2(n);
+}
+
+void delete_case2(node* n)
+{
+	node* s = n->sibling(); //n must have a sibling, because it is black.
+	if (s->color == true)
+	{
+		//n is black, but its sibling is red. 
+		//Make their parent red, and the sibling black, then rotate the parent.
+		n->parent->color = true;
+		s->color = false;
+		if (n == n->parent->left)
+		{
+			n->parent->leftRotate();
+		}
+		else {
+			n->parent->rightRotate();
+		}
+	}
+	delete_case3(n);
+}
+
+void delete_case3(node* n)
+{
+	node* s = n->sibling();
+	if (n->parent->color == false && s->color == false && s->left->color == false && s->right->color == false)
+	{
+		//P, S, and S's children are all black.
+		//Color S red, to reduce S's black height by 1. As long as its children are both black, it will not break the tree.
+		s->color = true;
+		//The black height of the parent is now changed, so delete_case1 needs to be called on it.
+		delete_case1(n->parent);
+	}
+	else {
+		delete_case4(n);
+	}
+}
+
+void delete_case4(node* n)
+{
+	node* s = n->sibling();
+	if (n->parent->color == true && s->color == false && s->left->color == false && s->right->color == false)
+	{
+		//S and its children are black, and S's parent, P, is red. Making P black and S red does not affect S's black height, but increases N's black height by 1.
+		s->color = true;
+		n->parent->color = false;
+	}
+	else {
+		delete_case5(n);
+	}
+}
+
+void delete_case5(node* n)
+{
+	node* s = n->sibling();
+	if (s->color == false)
+	{
+		if (n == n->parent->left && s->right->color == false && s->left->color == true)
+		{
+			s->color = true;
+			s->left->color = false;
+			s->rightRotate();
+		}
+		else if (n == n->parent->right && s->left->color == false && s->right->color == true)
+		{
+			s->color = true;
+			s->right->color = false;
+			s->leftRotate();
+		}
+	}
+	delete_case6(n);
+}
+
+void delete_case6(node* n)
+{
+	node* s = n->sibling();
+	s->color = n->parent->color;
+	n->parent->color = false;
+	if (n == n->parent->left)
+	{
+		s->right->color = false;
+		n->parent->leftRotate();
+	}
+	else {
+		s->left->color = false;
+		n->parent->rightRotate();
 	}
 }
 
