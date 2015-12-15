@@ -63,6 +63,9 @@ int main()
 	coord.Y = 32766;
 	SetConsoleScreenBufferSize(hConsole, coord);
 	
+	std::cout << "Input either 'I', 'D', or 'S' (Insert, Delete, Search) followed by an input string." << std::endl
+		<< "Alternatively, input 'file' to access file commands." << std::endl;
+
 	while (1)
 	{
 		std::string input;
@@ -70,15 +73,98 @@ int main()
 		{
 
 			std::cout << "Input: ";
-			while (!std::getline(std::cin, input) || input.size() < 3 || input[0] == 0 ||
-				(input[0] != 105 && input[0] != 73 //	i / I
-					&& input[0] != 100 && input[0] != 68 //	d / D
-					&& input[0] != 115 && input[0] != 83 //	s / S
-					&& input[1] != 32))				  //	space
+			while (!std::getline(std::cin, input) || 
+				input.size() < 3 ||
+				(	input.compare(0, 4, "file") != 0 &&
+					input.compare(0, 2, "i ") != 0 &&
+					input.compare(0, 2, "I ") != 0 &&
+					input.compare(0, 2, "d ") != 0 &&
+					input.compare(0, 2, "D ") != 0 &&
+					input.compare(0, 2, "s ") != 0 &&
+					input.compare(0, 2, "S ") != 0))
+
 			{
 				std::cout << "Invalid input. Try again: ";
 			}
-			if (input[0] == 115 || input[0] == 83) //Search
+			if (input.compare(0, 4, "file") == 0)
+			{
+				std::cout << "Please enter a file directory, or 'exit': ";
+				std::string dir;
+				while (!std::getline(std::cin, dir) ||
+					dir.size() < 1)
+				{
+					std::cout << "Invalid input. Try again: ";
+				}
+
+				/*
+				std::fstream file(dir, std::fstream::in | std::fstream::out | std::fstream::trunc);
+				if (!file.is_open()) {
+					std::cout << "File not opened!" << std::endl;
+					while (1);
+				}*/
+
+				if (dir.compare(0, 4, "exit") != 0)
+				{
+					std::cout << "Please input 'I' or 'D' to add or delete the contents of the file to the tree." << std::endl
+								<< "  Or, input 'save' followed by 'pre', 'in', or 'post' to save the tree to the file:";
+					while (!std::getline(std::cin, input) ||
+						input.size() < 1 ||
+						(input.compare(0, 1, "i") != 0 &&
+						input.compare(0, 1, "I") != 0 &&
+						input.compare(0, 1, "d") != 0 &&
+						input.compare(0, 1, "D") != 0 &&
+						input.compare(0, 5, "save ") != 0))
+					{
+						std::cout << "Invalid input. Try again: ";
+					}
+					if (input.compare(0, 1, "i") == 0 || input.compare(0, 1, "I") == 0)
+					{
+						std::ifstream file(dir);
+						if (!file.is_open()) {
+							std::cout << "File not found!" << std::endl;
+						}
+						else {
+							while (std::getline(file, input))
+							{
+								if (Tree->root->isLeaf == true)
+								{
+									Tree->root->isLeaf = false;
+									Tree->root->val = new std::string(input);
+									Tree->root->left = new node(Tree->root);
+									Tree->root->right = new node(Tree->root);
+									Tree->root->color = false;
+								}
+								else {
+									Tree->root->insert(input, Tree);
+								}
+							}
+						}
+					}
+					else if (input.compare(0, 1, "d") == 0 || input.compare(0, 1, "D") == 0)
+					{
+						std::ifstream file(dir);
+						if (!file.is_open()) {
+							std::cout << "File not found!" << std::endl;
+						}
+						else {
+							while (std::getline(file, input))
+							{
+								node* searchedNode = Tree->search(input);
+								if (searchedNode != NULL)
+								{
+									searchedNode->del(Tree);
+								}
+							}
+						}
+					}
+					else if (input.compare(0, 5, "save ") == 0)
+					{
+						FILE *file;
+						file = fopen((char*)&dir, "r");
+					}
+				}
+			}
+			else if (input[0] == 115 || input[0] == 83) //Search
 			{
 				input.erase(0, 2);
 				node* searchedNode = Tree->search(input);
@@ -95,7 +181,7 @@ int main()
 				node* searchedNode = Tree->search(input);
 				if (searchedNode != NULL)
 				{
-					std::cout << "Tree already contains \"" << input << "\"" << std::endl;
+					std::cout << "Tree already contains \"" << *searchedNode->val << "\"" << std::endl;
 				}
 				else {
 					if (Tree->root->isLeaf == true)
@@ -124,7 +210,6 @@ int main()
 				}
 			}
 			Tree->drawTree(Tree->root);
-			std::cout << std::endl;
 		} while (Tree->checkTree(Tree->root));
 		Tree->drawTree(Tree->root);
 		std::cout << std::endl;
@@ -157,26 +242,43 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 	int c2 = 0;
 	while (c1 < (*str1).size() && c2 < (*str2).size())
 	{
-		int weight1 = (*str1)[c1];
-		int weight2 = (*str2)[c2];
+		double weight1 = (*str1)[c1];
+		double weight2 = (*str2)[c2];
 		bool s1isNum = false;
 		bool s2isNum = false;
-		if (weight1 >= 48 && weight1 <= 57 || weight1 == 45)	
+		if (weight1 >= 48 && weight1 <= 57 || weight1 == 45 || weight1 == 46)	
 		{
 			bool negative = false;
-			int num = 0;
+			int decimal = 0;
+			double num = 0;
 			if (weight1 == 45)
 				negative = true;
-			if (weight1 != 45){
+			else if (weight1 == 46)
+			{
+				decimal = 1;
+			}else{
 				num = weight1 - 48;
 				s1isNum = true;
 			}
 			c1++;
-			while (c1 < (*str1).size() && ((*str1)[c1] >= 48 && (*str1)[c1] <= 57))
+			while ((c1 < (*str1).size() && ((*str1)[c1] >= 48 && (*str1)[c1] <= 57)) || ((*str1)[c1] == 46 && decimal == 0))
 			{
-				s1isNum = true;
-				num *= 10;
-				num += (*str1)[c1] - 48;
+				if ((*str1)[c1] == 46)
+				{
+						decimal++;
+				}
+				else {
+					s1isNum = true;
+					if (decimal == 0)
+					{
+						num *= 10;
+						num += (*str1)[c1] - 48;
+					}
+					else {
+						num += (double)((*str1)[c1] - 48) / pow(10, decimal);
+						decimal++;
+					}
+				}
 				c1++;
 			}
 			weight1 = negative ? -(num) : num;
@@ -184,22 +286,40 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 		else {
 			c1++;
 		}
-		if (weight2 >= 48 && weight2 <= 57 || weight2 == 45)
+		if (weight2 >= 48 && weight2 <= 57 || weight2 == 45 || weight2 == 46)
 		{
 			bool negative = false;
-			int num = 0;
+			int decimal = 0;
+			double num = 0;
 			if (weight2 == 45)
 				negative = true;
-			if (weight2 != 45){
-				s2isNum = true;
+			else if (weight2 == 46)
+			{
+				decimal = 1;
+			}
+			else {
 				num = weight2 - 48;
+				s2isNum = true;
 			}
 			c2++;
-			while (c2 < (*str2).size() && ((*str2)[c2] >= 48 && (*str2)[c2] <= 57))
+			while ((c2 < (*str2).size() && ((*str2)[c2] >= 48 && (*str2)[c2] <= 57)) || ((*str2)[c2] == 46 && decimal == 0))
 			{
-				s2isNum = true;
-				num *= 10;
-				num += (*str2)[c2] - 48;
+				if ((*str2)[c2] == 46)
+				{
+					decimal++;
+				}
+				else {
+					s2isNum = true;
+					if (decimal == 0)
+					{
+						num *= 10;
+						num += (*str2)[c2] - 48;
+					}
+					else {
+						num += (double)((*str2)[c2] - 48) / pow(10, decimal);
+						decimal++;
+					}
+				}
 				c2++;
 			}
 			weight2 = negative ? -(num) : num;
@@ -242,7 +362,7 @@ bool tree::checkTree(node* n)
 		if (n->color == true)
 		{
 			//Node is leaf, but colored red. Tree is not correct.
-			printf("BROKEN TREE! Leaf is RED.\n");
+			std::cout << "BROKEN TREE! Leaf is RED." << std::endl;
 			return false;
 		}
 		else {
@@ -251,7 +371,7 @@ bool tree::checkTree(node* n)
 	}
 	if (n == NULL)
 	{
-		printf("BROKEN TREE! Not all nodes have instantiated children.\n");
+		std::cout << "BROKEN TREE! Not all nodes have instantiated children." << std::endl;
 		return false;
 	}
 	if (n->color == true)
@@ -259,25 +379,25 @@ bool tree::checkTree(node* n)
 		if (n->parent == NULL)
 		{
 			//Node is root, but also red. Tree is not correct.
-			printf("BROKEN TREE! Root is RED.\n");
+			std::cout << "BROKEN TREE! Root is RED." << std::endl;
 			return false;
 		}
 		if (n->left->color == true)
 		{
 			//Node is red, but has red left child. Tree is not correct.
-			printf("BROKEN TREE! Node is RED, but has RED left child.\n");
+			std::cout << "BROKEN TREE! Node is RED, but has RED left child." << std::endl;
 			return false;
 		}
 		if (n->right->color == true)
 		{
 			//Node is red, but has red right child. Tree is not correct.
-			printf("BROKEN TREE! Node is RED, but has RED right child.\n");
+			std::cout << "BROKEN TREE! Node is RED, but has RED right child." << std::endl;
 			return false;
 		}
 		if ((n->right->isLeaf == false && n->left->isLeaf == true) || (n->right->isLeaf == true && n->left->isLeaf == false))
 		{
 			//Node is red, but has one single leaf child. Tree is not correct.
-			printf("BROKEN TREE! Node is RED, but has one single leaf child.\n");
+			std::cout << "BROKEN TREE! Node is RED, but has one single leaf child." << std::endl;
 			return false;
 		}
 	}
@@ -289,7 +409,7 @@ bool tree::checkTree(node* n)
 		if (alphanumeric_strcmp(n->val,n->left->val) <= 0)
 		{
 			//Left node is larger than its parent. Tree is not correct.
-			printf("BROKEN TREE! Node's left child is larger than its parent.\n");
+			std::cout << "BROKEN TREE! Node's left child is larger than its parent." << std::endl;
 			return false;
 		}
 	}
@@ -300,7 +420,7 @@ bool tree::checkTree(node* n)
 		if (alphanumeric_strcmp(n->val,n->right->val) >= 0)
 		{
 			//Right node is smaller than its parent. Tree is not correct.
-			printf("BROKEN TREE! Node's right child is smaller than its parent.\n");
+			std::cout << "BROKEN TREE! Node's right child is smaller than its parent." << std::endl;
 			return false;
 		}
 	}
@@ -308,7 +428,7 @@ bool tree::checkTree(node* n)
 	if (n->nodeHeight() == 0)
 	{
 		//Tree's black height unbalanced.
-		printf("BROKEN TREE! Tree's black height is unbalanced.\n");
+		std::cout << "BROKEN TREE! Tree's black height is unbalanced." << std::endl;
 		return false;
 	}
 	if (checkTree(n->left) && checkTree(n->right))
@@ -316,7 +436,7 @@ bool tree::checkTree(node* n)
 		//Node is correct, and node's two children are also correct.
 		return true;
 	}
-	printf("BROKEN TREE! Unknown error.\n");
+	std::cout << "BROKEN TREE! Unknown error." << std::endl;
 	return false;
 }
 
@@ -701,11 +821,6 @@ void node::del(tree* Tree)
 	if (m->color == true)
 	{
 		//If  m is red, replacing it with its child (black by definition) will not affect black height.
-		if (c2->isLeaf == false)
-		{
-			printf("ERROR!\n");
-			while (1);
-		}
 		delete c2;
 		delete m->val;
 		delete m;
@@ -717,11 +832,6 @@ void node::del(tree* Tree)
 		{
 			//If m is black and its child is red, changing its child to black preserves black height.
 			c->color = false;
-			if (c2->isLeaf == false)
-			{
-				printf("ERROR!\n");
-				while (1);
-			}
 			delete c2;
 			delete m->val;
 			delete m;
@@ -730,10 +840,6 @@ void node::del(tree* Tree)
 		else {
 			//m is black and its child is black, deleting m breaks black height.
 			if (c2->isLeaf == false)
-			{
-				printf("ERROR!\n");
-				while (1);
-			}
 			delete c2;
 			delete m->val;
 			delete m;

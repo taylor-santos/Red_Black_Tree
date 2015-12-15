@@ -1,8 +1,6 @@
-﻿  Red_Black_Tree.cpp
-Red_Black_Tree.cpp(73): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-  Generating code
-  1 of 123 functions ( 0.8%) were compiled, the rest were copied from previous compilation.
+﻿  Generating code
+  5 of 176 functions ( 2.8%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+    9 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Red_Black_Tree.vcxproj -> C:\Users\Taylor\Documents\GitHub\Red_Black_Tree\Release\Red_Black_Tree.exe
