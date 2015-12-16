@@ -9,15 +9,15 @@
 
 struct tree {
 	struct node* root;
-	int nodeCount;
 
 	void drawTree(struct node* currNode);
 	bool checkTree(node* n);
 	struct node* search(std::string input);
-	int findDepth(node* n);
 	void preOrderSave(struct node* n, std::ofstream& file);
 	void inOrderSave(struct node* n, std::ofstream& file);
 	void postOrderSave(struct node* n, std::ofstream& file);
+	void givenLevelSave(node* n, int level, std::ofstream& file);
+	void printLevelOrder(std::ofstream& file);
 	void stylizedSave(struct node* n, std::ofstream& file);
 
 	tree();
@@ -34,7 +34,9 @@ struct node
 
 	void insert(std::string val, tree* Tree);
 	
-	int nodeHeight();
+	int blackHeight();
+	int height();
+	int depth(tree* Tree);
 	int childCount();
 
 	node* uncle();
@@ -57,6 +59,12 @@ HANDLE hConsole;
 tree* Tree = new tree();
 
 int alphanumeric_strcmp(std::string* str1, std::string* str2);
+
+node** createQueue(int nodeCount, int* front, int* rear);
+
+void enQueue(node** queue, int* rear, node* new_node);
+
+node* deQueue(node** queue, int* front);
 
 int main()
 {
@@ -86,6 +94,7 @@ int main()
 					input.compare(0, 2, "i ") != 0 &&
 					input.compare(0, 2, "I ") != 0 &&
 					input.compare(0, 6, "input ") != 0 &&
+					input.compare(0, 7, "insert ") != 0 &&
 					input.compare(0, 2, "d ") != 0 &&
 					input.compare(0, 2, "D ") != 0 &&
 					input.compare(0, 7, "delete ") != 0 &&
@@ -96,113 +105,6 @@ int main()
 			{
 				std::cout << "Invalid input. Try again: ";
 			}
-			/*
-			if (input.compare(0, 4, "file") == 0)
-			{
-				std::cout << "Please enter a file directory, or 'exit': ";
-				std::string dir;
-				while (!std::getline(std::cin, dir) ||
-					dir.size() < 1)
-				{
-					std::cout << "Invalid input. Try again: ";
-				}
-
-				if (dir.compare(0, 4, "exit") != 0)
-				{
-					std::cout << "Please input 'I' or 'D' to add or delete the contents of the file to the tree." << std::endl
-								<< "  Or, input 'save' followed by 'pre', 'in', or 'post' to save the tree to the file: ";
-					while (!std::getline(std::cin, input) ||
-						input.size() < 1 ||
-						(input.compare(0, 1, "i") != 0 &&
-						input.compare(0, 1, "I") != 0 &&
-						input.compare(0, 1, "d") != 0 &&
-						input.compare(0, 1, "D") != 0 &&
-						input.compare(0, 5, "save ") != 0))
-					{
-						std::cout << "Invalid input. Try again: ";
-					}
-					if (input.compare(0, 1, "i") == 0 || input.compare(0, 1, "I") == 0)
-					{
-						std::ifstream file(dir);
-						if (!file.is_open()) {
-							std::cout << "File not found!" << std::endl;
-						}
-						else {
-							while (std::getline(file, input))
-							{
-								if (Tree->root->isLeaf == true)
-								{
-									Tree->root->isLeaf = false;
-									Tree->root->val = new std::string(input);
-									Tree->root->left = new node(Tree->root);
-									Tree->root->right = new node(Tree->root);
-									Tree->root->color = false;
-								}
-								else {
-									Tree->root->insert(input, Tree);
-								}
-							}
-						}
-					}
-					else if (input.compare(0, 1, "d") == 0 || input.compare(0, 1, "D") == 0)
-					{
-						std::ifstream file(dir);
-						if (!file.is_open()) {
-							std::cout << "File not found!" << std::endl;
-						}
-						else {
-							while (std::getline(file, input))
-							{
-								node* searchedNode = Tree->search(input);
-								if (searchedNode != NULL)
-								{
-									searchedNode->del(Tree);
-								}
-							}
-						}
-					}
-					else if (input.compare(0, 5, "save ") == 0 && (input.compare(5, 3, "pre") == 0 || input.compare(5, 2, "in") == 0 || input.compare(5, 4, "post") == 0 || input.compare(5, 8, "stylized") == 0))
-					{
-						std::ifstream file(dir);
-						if (file.is_open()) {
-							std::cout << "File already exists, would you like to overwrite it? (y/n): ";
-							std::string str;
-							while (!std::getline(std::cin, str) || 
-									(str.compare(0, 1, "y") != 0 &&
-									str.compare(0, 1, "n") != 0))
-							{
-								std::cout << "Invalid input. Please enter 'y' or 'n': ";
-							}
-							if (str.compare(0, 1, "n") == 0)
-							{
-								file.close();
-								continue;
-							}
-						}
-						std::ofstream f(dir);
-						if (input.compare(5, 3, "pre") == 0)
-						{
-							Tree->preOrderSave(Tree->root, f);
-						}
-						else if (input.compare(5, 2, "in") == 0)
-						{
-							Tree->inOrderSave(Tree->root, f);
-						}
-						else if (input.compare(5, 4, "post") == 0)
-						{
-							Tree->postOrderSave(Tree->root, f);
-						}
-						else if (input.compare(5, 8, "stylized") == 0)
-						{
-							//std::wofstream f(dir);
-							Tree->stylizedSave(Tree->root, f);
-						}
-						file.close();
-						f.close();
-					}
-				}
-			}
-			*/
 			if (input.compare(0,5,"file ") == 0)
 			{
 				if (input.size() > 7)
@@ -259,9 +161,9 @@ int main()
 					else if (input.compare(0, 5, "save ") == 0)
 					{
 						input.erase(0, 5);
-						std::cout << "Input the tree traversal method ('pre', 'in', or 'post'): ";
+						std::cout << "Input the tree traversal method ('pre', 'in', 'post', or 'level'): ";
 						std::string traverseType;
-						while (!std::getline(std::cin, traverseType) || (traverseType.compare(0, 3, "pre") != 0 && traverseType.compare(0, 2, "in") != 0 && traverseType.compare(0, 4, "post") != 0 && traverseType.compare(0, 8, "stylized") != 0))
+						while (!std::getline(std::cin, traverseType) || (traverseType.compare(0, 3, "pre") != 0 && traverseType.compare(0, 2, "in") != 0 && traverseType.compare(0, 4, "post") != 0 && traverseType.compare(0, 5, "level") != 0 && traverseType.compare(0, 7, "graphic") != 0))
 						{
 							std::cout << "Invalid input. Try again: ";
 						}
@@ -294,7 +196,18 @@ int main()
 						{
 							Tree->postOrderSave(Tree->root, f);
 						}
-						else if (traverseType.compare(0, 8, "stylized") == 0)
+						else if (traverseType.compare(0, 5, "level") == 0)
+						{
+							Tree->printLevelOrder(f);
+							/*
+							int h = Tree->root->height();
+							for (int i = 1; i <= h; ++i)
+							{
+								Tree->givenLevelSave(Tree->root, i, f);
+							}
+							*/
+						}
+						else if (traverseType.compare(0, 7, "graphic") == 0)
 						{
 							Tree->stylizedSave(Tree->root, f);
 						}
@@ -315,7 +228,8 @@ int main()
 				node* searchedNode = Tree->search(input);
 				if (searchedNode != NULL)
 				{
-					std::cout << "Tree contains \"" << input << "\"" << std::endl;
+					std::cout << "Tree contains \"" << *searchedNode->val << "\"" << std::endl;
+					std::cout << "\"" << *searchedNode->val << "\" has a height of " << searchedNode->height() << " and a depth of " << searchedNode->depth(Tree) << "." << std::endl;
 				}
 				else {
 					std::cout << "Tree does not contain \"" << input << "\"" << std::endl;
@@ -325,6 +239,8 @@ int main()
 			{
 				if (input.compare(0, 6, "input ") == 0)
 					input.erase(0, 6);
+				else if (input.compare(0, 7, "insert ") == 0)
+					input.erase(0, 7);
 				else
 					input.erase(0, 2);
 				node* searchedNode = Tree->search(input);
@@ -365,6 +281,11 @@ int main()
 			{
 				Tree->drawTree(Tree->root);
 			}
+			std::cout << "Tree contains " << Tree->root->childCount();
+			if (Tree->root->childCount() != 1)
+				std::cout << " nodes." << std::endl;
+			else
+				std::cout << " node." << std::endl;
 		} while (Tree->checkTree(Tree->root));
 		Tree->drawTree(Tree->root);
 		std::cout << std::endl;
@@ -375,7 +296,6 @@ int main()
 tree::tree()
 {
 	root = new struct node(NULL);
-	nodeCount = 0;
 };
 
 node::node(node* p)
@@ -510,6 +430,25 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 	return 0;
 }
 
+node** createQueue(int nodeCount, int* front, int* rear)
+{
+	node** queue = (node**)malloc(sizeof(node*) * nodeCount);
+	*front = *rear = 0;
+	return queue;
+}
+
+void enQueue(node** queue, int* rear, node* new_node)
+{
+	queue[*rear] = new_node;
+	(*rear)++;
+}
+
+node* deQueue(node** queue, int* front)
+{
+	(*front)++;
+	return queue[*front - 1];
+}
+
 bool tree::checkTree(node* n)
 {
 	if (n->isLeaf == true)
@@ -580,7 +519,7 @@ bool tree::checkTree(node* n)
 		}
 	}
 
-	if (n->nodeHeight() == 0)
+	if (n->blackHeight() == 0)
 	{
 		//Tree's black height unbalanced.
 		std::cout << "BROKEN TREE! Tree's black height is unbalanced." << std::endl;
@@ -595,15 +534,15 @@ bool tree::checkTree(node* n)
 	return false;
 }
 
-int node::nodeHeight()
+int node::blackHeight()
 {
 	node* n = this;
 	if (n->isLeaf == true)
 		return 1;
-	int leftH = n->left->nodeHeight();
+	int leftH = n->left->blackHeight();
 	if (leftH == 0)
 		return 0;
-	int rightH = n->right->nodeHeight();
+	int rightH = n->right->blackHeight();
 	if (rightH == 0)
 		return 0;
 	if (leftH != rightH)
@@ -612,6 +551,21 @@ int node::nodeHeight()
 		return leftH;
 	else
 		return leftH + 1;
+}
+
+int node::height()
+{
+	node* n = this;
+	if (this->isLeaf == true)
+		return 0;
+	else {
+		int LHeight = n->left->height();
+		int RHeight = n->right->height();
+		if (LHeight > RHeight)
+			return LHeight + 1;
+		else
+			return RHeight + 1;
+	}
 }
 
 int node::childCount()
@@ -716,11 +670,11 @@ node* tree::search(std::string input) {
 	return nodeWalker;
 }
 
-int tree::findDepth(node* n)
+int node::depth(tree* Tree)
 {
 	int depth = 0;
-	node* nodeWalker = root;
-	int cmp = alphanumeric_strcmp(nodeWalker->val, n->val);
+	node* nodeWalker = Tree->root;
+	int cmp = alphanumeric_strcmp(nodeWalker->val, this->val);
 	while (cmp != 0)
 	{
 		depth++;
@@ -736,7 +690,7 @@ int tree::findDepth(node* n)
 		{
 			return -1;
 		}
-		cmp = alphanumeric_strcmp(nodeWalker->val, n->val);
+		cmp = alphanumeric_strcmp(nodeWalker->val, this->val);
 	}
 	return depth;
 }
@@ -749,6 +703,7 @@ void tree::preOrderSave(node* n, std::ofstream& f)
 	preOrderSave(n->left, f);
 	preOrderSave(n->right, f);
 }
+
 void tree::inOrderSave(node* n, std::ofstream& f)
 {
 	if (n->isLeaf == true)
@@ -757,6 +712,7 @@ void tree::inOrderSave(node* n, std::ofstream& f)
 	f << *n->val << std::endl;
 	inOrderSave(n->right, f);
 }
+
 void tree::postOrderSave(node* n, std::ofstream& f)
 {
 	if (n->isLeaf == true)
@@ -764,6 +720,41 @@ void tree::postOrderSave(node* n, std::ofstream& f)
 	postOrderSave(n->left, f);
 	postOrderSave(n->right, f);
 	f << *n->val << std::endl;
+}
+
+void tree::givenLevelSave(node* n, int level, std::ofstream& file)
+{
+	if (n->isLeaf == true)
+		return;
+	if (level == 1)
+		file << *n->val << std::endl;
+	else if (level > 1)
+	{
+		givenLevelSave(n->left, level - 1, file);
+		givenLevelSave(n->right, level - 1, file);
+	}
+}
+
+void tree::printLevelOrder(std::ofstream& file)
+{
+	int rear, front;
+	node** queue = createQueue(this->root->childCount(), &front, &rear);
+	node* temp_node = root;
+
+	while (temp_node != NULL)
+	{
+		file << *temp_node->val << std::endl;
+		if (temp_node->left->isLeaf == false)
+		{
+			enQueue(queue, &rear, temp_node->left);
+		}
+		if (temp_node->right->isLeaf == false)
+		{
+			enQueue(queue, &rear, temp_node->right);
+		}
+		temp_node = deQueue(queue, &front);
+	}
+	free(queue);
 }
 
 void tree::stylizedSave(struct node* n, std::ofstream& file)
@@ -1023,7 +1014,6 @@ void node::insert(std::string input, tree* Tree)
 				right->right = new node(right);
 			right->color = true;
 			right->rebalance(Tree);
-			Tree->nodeCount++;
 			return;
 		}
 		right->insert(input, Tree);
@@ -1041,7 +1031,6 @@ void node::insert(std::string input, tree* Tree)
 				left->right = new node(left);
 			left->color = true;
 			left->rebalance(Tree);
-			Tree->nodeCount++;
 			return;
 		}
 		left->insert(input, Tree);
@@ -1101,7 +1090,6 @@ void node::del(tree* Tree)
 		delete c2;
 		delete m->val;
 		delete m;
-		Tree->nodeCount--;
 		return;
 	}
 	else {
@@ -1113,7 +1101,6 @@ void node::del(tree* Tree)
 			delete c2;
 			delete m->val;
 			delete m;
-			Tree->nodeCount--;
 			return;
 		}
 		else {
@@ -1122,7 +1109,6 @@ void node::del(tree* Tree)
 			delete c2;
 			delete m->val;
 			delete m;
-			Tree->nodeCount--;
 			c->delete_rebalance(Tree);
 		}
 	}
