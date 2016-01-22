@@ -5,16 +5,18 @@
 
 node::node(node* p)
 {
-	isLeaf = true;
-	left = NULL;
+	isLeaf = true;	//All nodes, when initially creates, are leaf nodes.
+	left = NULL;	//Leaf nodes, by definition, have no children
 	right = NULL;
 	parent = p;
-	color = false;	//Leaf is black.
+	color = false;	//Leaf nodes, by definition, are black.
 }
 
 
 int node::blackHeight()
 {
+	//Returns the number of black nodes between 'this' and its descendant leaf nodes.
+	//Returns 0 if its two children have different black-heights, which violates the rules of red-black trees.
 	node* n = this;
 	if (n->isLeaf == true)
 		return 1;
@@ -34,6 +36,7 @@ int node::blackHeight()
 
 int node::height()
 {
+	//Returns number of nodes between 'this' and its most distant leaf descendant
 	node* n = this;
 	if (this->isLeaf == true)
 		return 0;
@@ -114,6 +117,7 @@ void node::rightRotate(tree* Tree)
 
 int node::depth(tree* Tree)
 {
+	//Returns the number of nodes between the tree's root and 'this'.
 	int depth = 0;
 	node* nodeWalker = Tree->root;
 	int cmp = alphanumeric_strcmp(nodeWalker->val, this->val);
@@ -231,8 +235,6 @@ void node::insert(std::string input, tree* Tree)
 		this->color = true;
 		this->rebalance(Tree);
 	}
-	//int compare = strcmp(&val[0], &input[0]);
-	//int compare = strcmp(&((*val)[0]), &((input)[0]));
 	int compare = alphanumeric_strcmp(val, &input);
 	if (compare == 0)
 	{

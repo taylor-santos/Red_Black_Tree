@@ -1,4 +1,5 @@
-﻿  functions.cpp
-c:\users\taylor\documents\github\red_black_tree\red_black_tree\functions.cpp(104): error C4146: unary minus operator applied to unsigned type, result still unsigned
-c:\users\taylor\documents\github\red_black_tree\red_black_tree\functions.cpp(116): error C4146: unary minus operator applied to unsigned type, result still unsigned
-c:\users\taylor\documents\github\red_black_tree\red_black_tree\functions.cpp(125): error C4146: unary minus operator applied to unsigned type, result still unsigned
+﻿  tree.cpp
+  main.cpp
+c:\users\taylor\documents\github\red_black_tree\red_black_tree\main.cpp(18): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Generating Code...
+  Red_Black_Tree.vcxproj -> C:\Users\Taylor\Documents\GitHub\Red_Black_Tree\Debug\Red_Black_Tree.exe

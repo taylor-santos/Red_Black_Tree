@@ -101,7 +101,7 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 		}
 		if (s1isNum && !s2isNum)
 		{
-			return -c2;
+			return -(int)c2;
 		}
 		if (!s1isNum && s2isNum)
 		{
@@ -113,7 +113,7 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 		}
 		else if (weight2 > weight1)
 		{
-			return -c2;
+			return -(int)c2;
 		}
 	}
 	if (c1 < (*str1).size() && c2 >= (*str2).size())
@@ -122,7 +122,7 @@ int alphanumeric_strcmp(std::string* str1, std::string* str2)
 	}
 	else if (c1 >= (*str1).size() && c2 < (*str2).size())
 	{
-		return -c2;
+		return -(int)c2;
 	}
 	return 0;
 }

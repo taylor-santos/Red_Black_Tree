@@ -165,7 +165,8 @@ int main()
 					std::cout << "Invalid input." << std::endl;
 				}
 			}
-			else if (input.compare(0, 1, "s") == 0 || input.compare(0, 1, "S") == 0)
+			else if ((input.compare(0, 2, "s ") == 0 && input.size() > 2) ||
+				(input.compare(0, 7, "search ") == 0 && input.size() > 7))
 			{
 				if (input.compare(0, 7, "search ") == 0)
 					input.erase(0, 7);
@@ -181,11 +182,10 @@ int main()
 					std::cout << "Tree does not contain \"" << input << "\"" << std::endl;
 				}
 			}
-			else if (input.compare(0, 1, "i") == 0 || input.compare(0, 1, "I") == 0)
+			else if ((input.compare(0, 2, "i ") == 0 && input.size() > 2) ||
+				(input.compare(0, 7, "insert ") == 0 && input.size() > 7))
 			{
-				if (input.compare(0, 6, "input ") == 0)
-					input.erase(0, 6);
-				else if (input.compare(0, 7, "insert ") == 0)
+				if (input.compare(0, 7, "insert ") == 0)
 					input.erase(0, 7);
 				else
 					input.erase(0, 2);
@@ -208,7 +208,8 @@ int main()
 					}
 				}
 			}
-			else if (input.compare(0, 1, "d") == 0 || input.compare(0, 1, "D") == 0)
+			else if ((input.compare(0, 2, "d ") == 0 && input.size() > 2) || 
+					 (input.compare(0, 7, "delete ") == 0 && input.size() > 7))
 			{
 				if (input.compare(0, 7, "delete ") == 0)
 					input.erase(0, 7);
@@ -232,7 +233,7 @@ int main()
 				std::cout << " nodes." << std::endl;
 			else
 				std::cout << " node." << std::endl;
-		} while (Tree->checkTree(Tree->root));
+		} while (Tree->checkTree(Tree->root)); //Continue recieving inputs until the tree breaks. checkTree() checks the rules of a red-black tree and returns false if the tree is broken.
 		Tree->drawTree(Tree->root);
 		std::cout << std::endl;
 		while (1);

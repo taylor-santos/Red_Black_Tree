@@ -15,6 +15,7 @@ tree::tree()
 
 bool tree::checkTree(node* n)
 {
+	//Checks tree against Red-Black tree rules. If the tree violates any rules, print the reason and return false;
 	if (n->isLeaf == true)
 	{
 		if (n->color == true)
@@ -95,6 +96,7 @@ bool tree::checkTree(node* n)
 }
 
 node* tree::search(std::string input) {
+	//Walks tree until input string is found, returns node containing string. If no node is found, returns NULL
 	if (root->isLeaf == true)
 	{
 		return NULL;
@@ -147,19 +149,6 @@ void tree::postOrderSave(node* n, std::ofstream& f)
 	f << *n->val << std::endl;
 }
 
-void tree::givenLevelSave(node* n, int level, std::ofstream& file)
-{
-	if (n->isLeaf == true)
-		return;
-	if (level == 1)
-		file << *n->val << std::endl;
-	else if (level > 1)
-	{
-		givenLevelSave(n->left, level - 1, file);
-		givenLevelSave(n->right, level - 1, file);
-	}
-}
-
 void tree::printLevelOrder(std::ofstream& file)
 {
 	int rear, front;
@@ -184,6 +173,17 @@ void tree::printLevelOrder(std::ofstream& file)
 
 void tree::stylizedSave(struct node* n, std::ofstream& file)
 {
+	//Saves contents of tree to a file, using a graphical representation of the tree structure.
+	//Looks like this:
+	/*
+	     /-[g]
+	  /-[f]
+	  |  \-[e]
+	-[d]
+	  |  /-[c]
+	  \-[b]
+	     \-[a]
+	*/
 	if (n == NULL)
 		return;
 	if (n->isLeaf == true)
@@ -248,6 +248,8 @@ void tree::stylizedSave(struct node* n, std::ofstream& file)
 
 void tree::drawTree(node* currNode)
 {
+	//Prints the contents of the tree to the console, using a graphical representation of the tree structure.
+	//Warning, printing to console is very slow, so large trees may take several minutes to fully print.
 	if (currNode == NULL)
 		return;
 	if (currNode->isLeaf == true)
